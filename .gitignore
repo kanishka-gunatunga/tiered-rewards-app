@@ -1,0 +1,99 @@
+# Dependencies
+node_modules/
+
+# Environment & secrets (never commit)
+.env
+.env.*
+.env.local
+.env.*.local
+.example.env
+*.pem
+*.key
+
+# Safe env template — uncomment if you add .env.example to the repo
+# !.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build & cache
+/.cache/
+/build/
+/dist/
+*.tsbuildinfo
+.turbo/
+
+# React Router (auto-generated)
+.react-router/
+
+# App build outputs
+/app/build/
+/app/public/build/
+/public/build/
+/public/_dev/
+
+# Prisma / local databases
+/prisma/dev.sqlite
+/prisma/dev.sqlite-journal
+database.sqlite
+*.sqlite
+*.sqlite-journal
+
+# Shopify CLI (local dev artifacts)
+.shopify/*
+.shopify.lock
+
+# Extension build output
+/extensions/*/dist/
+
+# Test & coverage
+coverage/
+.nyc_output/
+
+# IDE & editor
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.history/
+.cursor/
+.gemini/
+
+# MCP / local assistant config (may contain paths or tokens)
+.mcp.json
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Windows
+$RECYCLE.BIN/
+
+# Optional deploy / hosting
+.vercel/
+.netlify/
+
+# Docker local overrides (keep Dockerfile tracked)
+docker-compose.override.yml
+
+# Misc
+*.local
+.eslintcache
