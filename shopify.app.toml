@@ -3,35 +3,45 @@
 client_id = "4715f56b046ff7be152da0fca9f1f4fc"
 application_url = "https://example.com"
 embedded = true
-name = "tiered-rewards-app"
+name = "Cart Tier Rewards"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "write_products,write_metaobjects,write_metaobject_definitions"
 
-[product.metafields.app.demo_info]
-type = "single_line_text_field"
-name = "Demo Source Info"
-description = "Tracks products created by the Shopify app template for development"
+# Tier rewards program settings (one entry per shop; tiers stored as JSON array).
+# Storefront + discount function read this; admin app writes via metaobjectUpsert.
+# Type in GraphQL/Liquid: $app:tier_rewards_config
+[metaobjects.app.tier_rewards_config]
+name = "Tier Rewards Config"
+description = "Cart spend tiers, discount amounts, and storefront messages for the rewards program"
+display_name_field = "title"
 
-  [product.metafields.app.demo_info.access]
+  [metaobjects.app.tier_rewards_config.access]
   admin = "merchant_read_write"
+  storefront = "public_read"
 
-[metaobjects.app.example]
-name = "Example"
-description = "An example metaobject definition created by this template"
-
-  [metaobjects.app.example.access]
-  admin = "merchant_read_write"
-
-[metaobjects.app.example.fields.title]
+[metaobjects.app.tier_rewards_config.fields.title]
 name = "Title"
 type = "single_line_text_field"
 required = true
 
-[metaobjects.app.example.fields.description]
-name = "Description"
-type = "multi_line_text_field"
+[metaobjects.app.tier_rewards_config.fields.enabled]
+name = "Program enabled"
+type = "boolean"
+
+[metaobjects.app.tier_rewards_config.fields.program_title]
+name = "Program title"
+type = "single_line_text_field"
+
+[metaobjects.app.tier_rewards_config.fields.homepage_subtitle]
+name = "Homepage subtitle"
+type = "single_line_text_field"
+
+[metaobjects.app.tier_rewards_config.fields.tiers]
+name = "Tiers"
+type = "json"
+required = true
 
 [webhooks]
 api_version = "2026-07"
@@ -48,5 +58,4 @@ api_version = "2026-07"
 redirect_urls = [ "https://example.com/api/auth" ]
 
 [build]
-include_config_on_deploy = true
 automatically_update_urls_on_dev = true
