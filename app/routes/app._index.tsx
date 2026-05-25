@@ -1,6 +1,1 @@
-export {
-  loader,
-  action,
-  default,
-  headers,
-} from "./app.tiers";
+export { default } from "../components/TierSettingsPage";

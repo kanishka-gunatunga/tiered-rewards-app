@@ -1,67 +1,27 @@
 import type { authenticate } from "../shopify.server"; // type-only
 
+import {
+  DEFAULT_TIER_REWARDS_CONFIG,
+  MAX_TIERS,
+  type RewardTier,
+  type RewardTierFormRow,
+  type TierRewardsConfig,
+} from "./tier-rewards.shared";
+
+export {
+  DEFAULT_TIER_REWARDS_CONFIG,
+  MAX_TIERS,
+  type RewardTier,
+  type RewardTierFormRow,
+  type TierRewardsConfig,
+} from "./tier-rewards.shared";
+
 type AdminGraphQLClient = Awaited<
   ReturnType<typeof authenticate.admin>
 >["admin"];
 
 export const TIER_REWARDS_METAOBJECT_TYPE = "$app:tier_rewards_config";
 export const TIER_REWARDS_CONFIG_HANDLE = "default";
-export const MAX_TIERS = 10;
-
-export type RewardTier = {
-  minSpend: number;
-  discountAmount: number;
-  messageFar: string;
-  messageClose: string;
-  messageUnlocked: string;
-};
-
-export type TierRewardsConfig = {
-  title: string;
-  enabled: boolean;
-  programTitle: string;
-  homepageSubtitle: string;
-  tiers: RewardTier[];
-};
-
-/** Form-friendly tier row (dollar strings for merchant input). */
-export type RewardTierFormRow = {
-  minSpendDollars: string;
-  discountDollars: string;
-  messageFar: string;
-  messageClose: string;
-  messageUnlocked: string;
-};
-
-export const DEFAULT_TIER_REWARDS_CONFIG: TierRewardsConfig = {
-  title: "Default rewards",
-  enabled: true,
-  programTitle: "Instant Rewards",
-  homepageSubtitle:
-    "Spend more on this order to unlock bigger discounts",
-  tiers: [
-    {
-      minSpend: 300_100,
-      discountAmount: 30_000,
-      messageFar:
-        "A Black Friday reward is waiting… spend $3,001 to unlock it.",
-      messageClose:
-        "You're nearly there! Spend {amount_remaining} more to unlock your $300 instant reward.",
-      messageUnlocked:
-        "Congratulations! You've unlocked your $300 instant reward. Spend {amount_remaining} more to upgrade to the next tier.",
-    },
-    {
-      minSpend: 400_100,
-      discountAmount: 40_000,
-      messageFar:
-        "Spend {amount_remaining} more to unlock your $400 bonus tier.",
-      messageClose:
-        "Almost there! Spend {amount_remaining} more for your $400 instant reward.",
-      messageUnlocked:
-        "You've unlocked your $400 instant reward. Spend {amount_remaining} more for the maximum tier.",
-    },
-  ],
-};
 
 const METAOBJECT_BY_HANDLE_QUERY = `#graphql
   query TierRewardsConfigByHandle($handle: MetaobjectHandleInput!) {
