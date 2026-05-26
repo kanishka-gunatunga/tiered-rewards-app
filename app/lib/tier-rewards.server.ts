@@ -183,7 +183,11 @@ export function validateTierRewardsConfig(
     errors.push(`You can configure at most ${MAX_TIERS} tiers.`);
   }
 
+  const minSpendSeen = new Map<number, number>();
+  const discountSeen = new Map<number, number>();
   let previousMinSpend = -1;
+  let previousDiscountAmount = -1;
+
   for (let i = 0; i < config.tiers.length; i++) {
     const tier = config.tiers[i];
     const label = `Tier ${i + 1}`;
@@ -199,7 +203,37 @@ export function validateTierRewardsConfig(
         `${label}: minimum spend must be higher than the previous tier.`,
       );
     }
+    if (tier.discountAmount <= previousDiscountAmount) {
+      errors.push(
+        `${label}: discount must be greater than the previous tier's discount.`,
+      );
+    }
+    if (tier.discountAmount >= tier.minSpend) {
+      errors.push(
+        `${label}: discount ($${centsToDollarString(tier.discountAmount)}) must be less than the minimum spend ($${centsToDollarString(tier.minSpend)}).`,
+      );
+    }
+
+    const duplicateMinSpendTier = minSpendSeen.get(tier.minSpend);
+    if (duplicateMinSpendTier !== undefined) {
+      errors.push(
+        `${label}: minimum spend ($${centsToDollarString(tier.minSpend)}) is already used by tier ${duplicateMinSpendTier + 1}.`,
+      );
+    } else {
+      minSpendSeen.set(tier.minSpend, i);
+    }
+
+    const duplicateDiscountTier = discountSeen.get(tier.discountAmount);
+    if (duplicateDiscountTier !== undefined) {
+      errors.push(
+        `${label}: discount ($${centsToDollarString(tier.discountAmount)}) is already used by tier ${duplicateDiscountTier + 1}. Each tier needs a unique reward amount.`,
+      );
+    } else {
+      discountSeen.set(tier.discountAmount, i);
+    }
+
     previousMinSpend = tier.minSpend;
+    previousDiscountAmount = tier.discountAmount;
 
     if (!tier.messageFar.trim() || !tier.messageClose.trim()) {
       errors.push(`${label}: far and close messages are required.`);
