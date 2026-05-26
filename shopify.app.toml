@@ -7,7 +7,7 @@ name = "Cart Tier Rewards"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products,write_metaobjects,write_metaobject_definitions"
+scopes = "write_products,write_metaobjects,write_metaobject_definitions,write_discounts"
 
 # Tier rewards program settings (one entry per shop; tiers stored as JSON array).
 # Storefront + discount function read this; admin app writes via metaobjectUpsert.
@@ -42,6 +42,13 @@ type = "single_line_text_field"
 name = "Tiers"
 type = "json"
 required = true
+
+# Checkout function reads this JSON from the automatic app discount (synced on admin Save).
+[discount.metafields.app.tier_rewards_config]
+type = "json"
+name = "Tier rewards function config"
+access.admin = "merchant_read_write"
+access.storefront = "none"
 
 [webhooks]
 api_version = "2026-07"

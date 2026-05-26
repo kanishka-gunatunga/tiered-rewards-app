@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Form,
   useActionData,
-  useRouteLoaderData,
+  useLoaderData,
   useNavigation,
 } from "react-router";
 import { useAppBridge } from "@shopify/app-bridge-react";
@@ -17,11 +17,12 @@ import {
 
 import styles from "../styles/tier-settings.module.css";
 
-type AppRouteLoaderData = {
+type TiersLoaderData = {
   apiKey: string;
   config: TierRewardsConfig;
   formRows: RewardTierFormRow[];
   loadError: string | null;
+  checkoutDiscountActive: boolean;
 };
 
 type TiersActionData =
@@ -35,11 +36,12 @@ type TiersActionData =
       ok: true;
       config: TierRewardsConfig;
       formRows: RewardTierFormRow[];
+      checkoutDiscountActive: boolean;
     }
   | undefined;
 
 export default function TierSettingsPage() {
-  const loaderData = useRouteLoaderData("routes/app") as AppRouteLoaderData;
+  const loaderData = useLoaderData<TiersLoaderData>();
   const actionData = useActionData<TiersActionData>();
   const navigation = useNavigation();
   const shopify = useAppBridge();
@@ -47,8 +49,12 @@ export default function TierSettingsPage() {
   const isSaving =
     navigation.state === "submitting" && navigation.formMethod === "POST";
 
-  const { loadError, config: loaderConfig, formRows: loaderFormRows } =
-    loaderData;
+  const {
+    loadError,
+    config: loaderConfig,
+    formRows: loaderFormRows,
+    checkoutDiscountActive: loaderCheckoutDiscountActive,
+  } = loaderData;
 
   const savedConfig = actionData?.ok ? actionData.config : loaderConfig;
   const formRows =
@@ -66,6 +72,9 @@ export default function TierSettingsPage() {
   );
   const [enabled, setEnabled] = useState(savedConfig.enabled);
   const errors = actionData && !actionData.ok ? actionData.errors : [];
+  const checkoutDiscountActive = actionData?.ok
+    ? actionData.checkoutDiscountActive
+    : loaderCheckoutDiscountActive;
 
   useEffect(() => {
     setTiers(formRows);
@@ -77,10 +86,14 @@ export default function TierSettingsPage() {
   }, [formRows]);
 
   useEffect(() => {
-    if (actionData?.ok) {
-      shopify.toast.show("Rewards settings saved");
+    if (actionData?.ok === true) {
+      shopify.toast.show(
+        actionData.checkoutDiscountActive
+          ? "Settings saved — checkout discount is active"
+          : "Settings saved",
+      );
     }
-  }, [actionData?.ok, shopify]);
+  }, [actionData, shopify]);
 
   const addTier = () => {
     if (tiers.length >= MAX_TIERS) return;
@@ -123,6 +136,48 @@ export default function TierSettingsPage() {
                 Showing default values. Save once to create the config in
                 Shopify.
               </p>
+            </div>
+          )}
+
+          {!loadError && (
+            <div
+              className={`${styles.statusCard} ${
+                checkoutDiscountActive
+                  ? styles.statusCardSuccess
+                  : styles.statusCardPending
+              }`}
+              role="status"
+            >
+              <div className={styles.statusCardHeader}>
+                <span
+                  className={`${styles.statusBadge} ${
+                    checkoutDiscountActive
+                      ? styles.statusBadgeSuccess
+                      : styles.statusBadgePending
+                  }`}
+                >
+                  {checkoutDiscountActive ? "Active" : "Setup needed"}
+                </span>
+                <h3 className={styles.statusCardTitle}>Checkout discounts</h3>
+              </div>
+              {checkoutDiscountActive ? (
+                <>
+                  <p className={styles.statusCardBody}>
+                    Tier discounts are applied automatically at checkout when a
+                    customer&apos;s cart subtotal reaches each level you
+                    configure below.
+                  </p>
+                  <p className={styles.statusCardMeta}>
+                    Shopify discount: <strong>Cart tier rewards</strong>{" "}
+                    (Admin → Discounts). Saving settings updates this discount.
+                  </p>
+                </>
+              ) : (
+                <p className={styles.statusCardBody}>
+                  Save your settings once to activate checkout discounts. After
+                  that, each save updates your tiers for customers at checkout.
+                </p>
+              )}
             </div>
           )}
 
@@ -189,7 +244,7 @@ export default function TierSettingsPage() {
             </div>
           </section>
 
-          <section className={styles.section}>
+          <section className={`${styles.section} ${styles.sectionSpaced}`}>
             <h3 className={styles.sectionTitle}>Spend tiers (cart subtotal)</h3>
             <p className={styles.hint}>
               Discounts apply to the current cart subtotal (not lifetime

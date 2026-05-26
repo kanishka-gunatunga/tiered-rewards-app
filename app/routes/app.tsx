@@ -1,8 +1,13 @@
 import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useRouteError, useRouteLoaderData } from "react-router";
+import { redirect, useLoaderData, useRouteError } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 
+import TierSettingsPage from "../components/TierSettingsPage";
+import {
+  hasTierCartDiscount,
+  syncTierRewardsDiscount,
+} from "../lib/tier-rewards-discount.server";
 import {
   configToFormRows,
   DEFAULT_TIER_REWARDS_CONFIG,
@@ -25,14 +30,22 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     config: { ...DEFAULT_TIER_REWARDS_CONFIG },
     formRows: configToFormRows(DEFAULT_TIER_REWARDS_CONFIG),
     loadError: null as string | null,
+    checkoutDiscountActive: false,
   };
 
   try {
     const config = await loadTierRewardsConfig(admin);
+    let checkoutDiscountActive = false;
+    try {
+      checkoutDiscountActive = await hasTierCartDiscount(admin);
+    } catch (discountCheckError) {
+      console.error("[app] discount status check failed:", discountCheckError);
+    }
     tierData = {
       config,
       formRows: configToFormRows(config),
       loadError: null,
+      checkoutDiscountActive,
     };
   } catch (error) {
     console.error("[app] tier settings loader failed:", error);
@@ -64,23 +77,46 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     };
   }
 
-  return { ok: true as const, config, formRows: configToFormRows(config) };
+  let checkoutDiscountActive = false;
+  try {
+    await syncTierRewardsDiscount(admin, config);
+    checkoutDiscountActive = true;
+  } catch (error) {
+    console.error("[app] discount sync failed:", error);
+    return {
+      ok: false as const,
+      errors: [
+        error instanceof Error
+          ? error.message
+          : "Settings saved but checkout discount could not be updated. Keep shopify app dev running, then save again.",
+      ],
+      formRows: configToFormRows(config),
+      config,
+      checkoutDiscountActive: false,
+    };
+  }
+
+  return {
+    ok: true as const,
+    config,
+    formRows: configToFormRows(config),
+    checkoutDiscountActive,
+  };
 };
 
-type AppLayoutLoaderData = {
+type AppLoaderData = {
   apiKey: string;
 };
 
 export default function App() {
-  const data = useRouteLoaderData("routes/app") as AppLayoutLoaderData | undefined;
-  const apiKey = data?.apiKey ?? "";
+  const { apiKey } = useLoaderData<AppLoaderData>();
 
   return (
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
         <s-link href="/app">Rewards settings</s-link>
       </s-app-nav>
-      <Outlet />
+      <TierSettingsPage />
     </AppProvider>
   );
 }
