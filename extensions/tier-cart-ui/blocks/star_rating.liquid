@@ -1,0 +1,539 @@
+{% liquid
+  assign rewards_entry = shop.metaobjects['$app:tier_rewards_config']['default']
+  assign rewards_enabled = false
+  assign rewards_title = block.settings.fallback_title
+  assign tiers_json = blank
+  assign cart_subtotal_cents = cart.total_price
+
+  if rewards_entry
+    if rewards_entry.enabled.value == true or rewards_entry.enabled.value == 'true'
+      assign rewards_enabled = true
+    endif
+    if rewards_entry.program_title.value != blank
+      assign rewards_title = rewards_entry.program_title.value
+    endif
+    assign tiers_json = rewards_entry.tiers.value
+  endif
+%}
+
+{% if rewards_enabled and tiers_json != blank %}
+  <div
+    class="tier-rewards-block-v2"
+    style="margin-top: {{ block.settings.margin_top }}px; margin-bottom: {{ block.settings.margin_bottom }}px;"
+    data-tier-rewards
+    data-tier-default-subtotal="{{ cart_subtotal_cents }}"
+    {{ block.shopify_attributes }}
+  >
+    <div class="tr-header">
+      <div class="tr-left">
+        <h3 class="tr-title">{{ rewards_title }}</h3>
+        <p class="tr-subtitle">{{ block.settings.subtitle }}</p>
+        <p class="tr-cart-text">Current cart: <span data-tier-cart-value>{{ cart.total_price | money }}</span></p>
+      </div>
+      <div class="tr-center">
+        <p class="tr-earned-line">
+          You have earned <strong data-tier-earned-value>{{ 0 | money }}</strong>!
+        </p>
+      </div>
+      <div class="tr-right">
+        <span class="tr-earned-pill" data-tier-earned-pill>
+          <span class="tr-pill-icon" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8.43611 13.1584C8.36031 12.8646 8.20718 12.5965 7.99263 12.3819C7.77808 12.1674 7.50995 12.0143 7.21615 11.9385L2.00779 10.5954C1.91893 10.5702 1.84073 10.5167 1.78504 10.443C1.72935 10.3693 1.69922 10.2794 1.69922 10.1871C1.69922 10.0947 1.72935 10.0048 1.78504 9.93115C1.84073 9.85745 1.91893 9.80393 2.00779 9.77871L7.21615 8.43481C7.50985 8.35909 7.7779 8.20608 7.99244 7.99169C8.20698 7.7773 8.36018 7.50935 8.43611 7.21571L9.77916 2.00735C9.80412 1.91814 9.85759 1.83954 9.93139 1.78356C10.0052 1.72757 10.0953 1.69727 10.1879 1.69727C10.2806 1.69727 10.3707 1.72757 10.4445 1.78356C10.5183 1.83954 10.5717 1.91814 10.5967 2.00735L11.9389 7.21571C12.0147 7.50951 12.1678 7.77763 12.3824 7.99218C12.5969 8.20673 12.8651 8.35987 13.1589 8.43566L18.3672 9.77786C18.4568 9.80257 18.5358 9.85597 18.5921 9.92989C18.6483 10.0038 18.6788 10.0942 18.6788 10.1871C18.6788 10.28 18.6483 10.3703 18.5921 10.4442C18.5358 10.5181 18.4568 10.5716 18.3672 10.5963L13.1589 11.9385C12.8651 12.0143 12.5969 12.1674 12.3824 12.3819C12.1678 12.5965 12.0147 12.8646 11.9389 13.1584L10.5959 18.3668C10.5709 18.456 10.5174 18.5346 10.4436 18.5906C10.3698 18.6466 10.2797 18.6769 10.1871 18.6769C10.0944 18.6769 10.0044 18.6466 9.93055 18.5906C9.85674 18.5346 9.80328 18.456 9.77831 18.3668L8.43611 13.1584Z" stroke="white" stroke-width="1.69792" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span data-tier-earned-pill-text>{{ 0 | money }} OFF</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="tr-milestones">
+      <div class="tr-milestone tr-milestone-left">
+        <span class="tr-milestone-icon">
+          <svg width="48" height="48" viewBox="0 0 66 66" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="33" cy="33" r="33" fill="white"/>
+            <circle cx="33.1265" cy="33.1284" r="22.602" fill="#C76B00"/>
+            <circle cx="33.1235" cy="33.1245" r="14.6016" fill="white"/>
+          </svg>
+        </span>
+        <div class="tr-milestone-money" data-tier-left-spend></div>
+        <div class="tr-milestone-off tr-milestone-off-green" data-tier-left-discount></div>
+      </div>
+      <div class="tr-milestone tr-milestone-right">
+        <span class="tr-milestone-icon">
+          <svg width="48" height="48" viewBox="0 0 66 66" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="33" cy="33" r="33" fill="white"/>
+            <circle cx="33" cy="33" r="23" fill="#C76B00"/>
+            <path d="M33.2109 43.5C32.5709 43.5 32.0419 42.971 32.0419 42.331C32.0419 38.842 29.2369 36.038 25.7489 36.038C25.1089 36.038 24.5859 35.509 24.5859 34.869C24.5859 34.229 25.1089 33.706 25.7489 33.706C29.2369 33.706 32.0419 30.895 32.0419 27.413C32.0419 26.773 32.5709 26.25 33.2109 26.25C33.8509 26.25 34.3739 26.773 34.3739 27.413C34.3739 30.901 37.1849 33.706 40.6669 33.706C41.3069 33.706 41.8299 34.229 41.8299 34.869C41.8299 35.509 41.3069 36.038 40.6669 36.038C37.1789 36.038 34.3739 38.842 34.3739 42.331C34.3739 42.971 33.8509 43.5 33.2109 43.5ZM30.2209 34.875C31.3979 35.503 32.3659 36.472 32.9939 37.648C33.6219 36.472 34.5909 35.503 35.7669 34.875C34.5909 34.247 33.6219 33.279 32.9939 32.103C32.3659 33.279 31.3979 34.247 30.2209 34.875Z" fill="white"/>
+          </svg>
+        </span>
+        <div class="tr-milestone-money" data-tier-right-spend></div>
+        <div class="tr-milestone-off tr-milestone-off-orange" data-tier-right-discount></div>
+      </div>
+    </div>
+
+    <div class="tr-track">
+      <div class="tr-track-fill" data-tier-progress></div>
+    </div>
+
+    <p class="tr-cta" data-tier-cta></p>
+
+    <p class="tr-next-up">
+      <span class="tr-next-muted">Next up:</span>
+      <span class="tr-next-strong" data-tier-next-spend></span>
+      <span class="tr-next-muted">→</span>
+      <span class="tr-next-accent" data-tier-next-discount></span>
+    </p>
+  </div>
+
+  <script>
+    (() => {
+      const scope = document.currentScript?.previousElementSibling;
+      if (!scope || scope.dataset.tierMounted === "true") return;
+      scope.dataset.tierMounted = "true";
+
+      const rawTiers = {{ tiers_json | json }};
+      const currencyCode = {{ cart.currency.iso_code | json }};
+      const defaultSubtotal = Number(scope.dataset.tierDefaultSubtotal || 0);
+
+      const parseTiers = (value) => {
+        let parsed = value;
+        if (typeof parsed === "string") {
+          try {
+            parsed = JSON.parse(parsed);
+          } catch {
+            return [];
+          }
+        }
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+          .map((tier) => ({
+            minSpend: Number(tier?.minSpend || 0),
+            discountAmount: Number(tier?.discountAmount || 0),
+            messageFar: String(tier?.messageFar || ""),
+            messageClose: String(tier?.messageClose || ""),
+            messageUnlocked: String(tier?.messageUnlocked || ""),
+          }))
+          .filter((tier) => tier.minSpend > 0 && tier.discountAmount > 0)
+          .sort((a, b) => a.minSpend - b.minSpend);
+      };
+
+      const tiers = parseTiers(rawTiers);
+      if (!tiers.length) return;
+
+      const formatMoney = (cents, maxFractionDigits = 2) =>
+        (Number(cents || 0) / 100).toLocaleString(undefined, {
+          style: "currency",
+          currency: currencyCode,
+          minimumFractionDigits: 0,
+          maximumFractionDigits: maxFractionDigits,
+        });
+
+      const els = {
+        cartValue: scope.querySelector("[data-tier-cart-value]"),
+        earnedValue: scope.querySelector("[data-tier-earned-value]"),
+        earnedPillText: scope.querySelector("[data-tier-earned-pill-text]"),
+        leftSpend: scope.querySelector("[data-tier-left-spend]"),
+        leftDiscount: scope.querySelector("[data-tier-left-discount]"),
+        rightSpend: scope.querySelector("[data-tier-right-spend]"),
+        rightDiscount: scope.querySelector("[data-tier-right-discount]"),
+        progress: scope.querySelector("[data-tier-progress]"),
+        cta: scope.querySelector("[data-tier-cta]"),
+        nextSpend: scope.querySelector("[data-tier-next-spend]"),
+        nextDiscount: scope.querySelector("[data-tier-next-discount]"),
+      };
+
+      const applyTemplate = (template, amountRemainingCents, fallback) => {
+        if (!template || !template.trim()) return fallback;
+        return template.replaceAll("{amount_remaining}", formatMoney(Math.max(0, amountRemainingCents)));
+      };
+
+      const tierAt = (index) => tiers[Math.max(0, Math.min(index, tiers.length - 1))];
+
+      const computeState = (subtotalCents) => {
+        let currentIndex = -1;
+        for (let i = 0; i < tiers.length; i += 1) {
+          if (subtotalCents >= tiers[i].minSpend) currentIndex = i;
+        }
+
+        const maxIndex = tiers.length - 1;
+        let leftIndex;
+        let rightIndex;
+
+        if (currentIndex < 0) {
+          leftIndex = 0;
+          rightIndex = Math.min(1, maxIndex);
+        } else if (currentIndex >= maxIndex) {
+          leftIndex = Math.max(maxIndex - 1, 0);
+          rightIndex = maxIndex;
+        } else {
+          leftIndex = currentIndex;
+          rightIndex = currentIndex + 1;
+        }
+
+        const leftTier = tierAt(leftIndex);
+        const rightTier = tierAt(rightIndex);
+        const currentTier = currentIndex >= 0 ? tierAt(currentIndex) : null;
+        const nextTier = currentIndex < maxIndex ? tierAt(currentIndex + 1) : null;
+
+        const start = Number(leftTier.minSpend || 0);
+        const end = Number(rightTier.minSpend || start);
+        let progressPercent = 100;
+        if (end > start) {
+          progressPercent = ((subtotalCents - start) / (end - start)) * 100;
+          progressPercent = Math.max(0, Math.min(100, progressPercent));
+        }
+        if (currentIndex < 0 && end > 0) {
+          progressPercent = Math.max(0, Math.min(100, (subtotalCents / end) * 100));
+        }
+        if (currentIndex >= maxIndex) progressPercent = 100;
+
+        return {
+          currentTier,
+          nextTier,
+          leftTier,
+          rightTier,
+          progressPercent,
+          remainingCents: nextTier ? Math.max(0, nextTier.minSpend - subtotalCents) : 0,
+          subtotalCents,
+        };
+      };
+
+      const render = (subtotalCents) => {
+        const state = computeState(subtotalCents);
+        const currentDiscount = Number(state.currentTier?.discountAmount || 0);
+        const nextDiscount = Number(state.nextTier?.discountAmount || 0);
+
+        if (els.cartValue) els.cartValue.textContent = formatMoney(state.subtotalCents, 2);
+        if (els.earnedValue) els.earnedValue.textContent = formatMoney(currentDiscount, 2);
+        if (els.earnedPillText) els.earnedPillText.textContent = `${formatMoney(currentDiscount, 2)} OFF`;
+
+        if (els.leftSpend) els.leftSpend.textContent = formatMoney(state.leftTier.minSpend, 2);
+        if (els.leftDiscount) els.leftDiscount.textContent = `${formatMoney(state.leftTier.discountAmount, 2)} OFF`;
+        if (els.rightSpend) els.rightSpend.textContent = formatMoney(state.rightTier.minSpend, 2);
+        if (els.rightDiscount) els.rightDiscount.textContent = `${formatMoney(state.rightTier.discountAmount, 2)} OFF`;
+
+        if (els.progress) els.progress.style.width = `${state.progressPercent.toFixed(2)}%`;
+
+        if (els.cta) {
+          if (state.nextTier) {
+            const fallback = `Add ${formatMoney(state.remainingCents, 1)} more to unlock ${formatMoney(nextDiscount, 0)} discount!`;
+            const source = state.currentTier ? state.currentTier.messageClose : state.nextTier.messageFar;
+            const full = applyTemplate(source, state.remainingCents, fallback);
+            const highlighted = formatMoney(nextDiscount, 0);
+            const escaped = full.replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]));
+            els.cta.innerHTML = escaped.replace(highlighted, `<span class="tr-cta-accent">${highlighted}</span>`);
+          } else {
+            const fallbackTop = `Great! You unlocked the highest reward: ${formatMoney(currentDiscount, 0)}.`;
+            els.cta.textContent = applyTemplate(state.currentTier?.messageUnlocked || "", 0, fallbackTop);
+          }
+        }
+
+        if (els.nextSpend && els.nextDiscount) {
+          const refTier = state.nextTier || state.rightTier;
+          els.nextSpend.textContent = formatMoney(refTier.minSpend, 2);
+          els.nextDiscount.textContent = `${formatMoney(refTier.discountAmount, 2)} OFF`;
+        }
+      };
+
+      const fetchSubtotal = async () => {
+        try {
+          const response = await fetch("/cart.js", { credentials: "same-origin" });
+          if (!response.ok) return defaultSubtotal;
+          const cartData = await response.json();
+          return Number(cartData?.total_price ?? defaultSubtotal);
+        } catch {
+          return defaultSubtotal;
+        }
+      };
+
+      let timer = null;
+      const refresh = async () => {
+        const subtotal = await fetchSubtotal();
+        render(subtotal);
+      };
+
+      render(defaultSubtotal);
+      refresh();
+
+      const queueRefresh = () => setTimeout(refresh, 250);
+      document.addEventListener("change", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        if (target.closest('form[action*="/cart"]')) queueRefresh();
+      });
+      document.addEventListener("submit", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLFormElement)) return;
+        if (target.action.includes("/cart")) queueRefresh();
+      });
+      document.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        if (target.closest('[name="plus"], [name="minus"], .quantity__button, a[href="/cart/clear"]')) {
+          queueRefresh();
+        }
+      });
+      window.addEventListener("focus", refresh);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") refresh();
+      });
+
+      timer = window.setInterval(refresh, 3000);
+      window.addEventListener("beforeunload", () => {
+        if (timer) window.clearInterval(timer);
+      });
+    })();
+  </script>
+
+  <style>
+    .tier-rewards-block-v2 {
+      border: 1px solid #ece8e2;
+      border-radius: 16px;
+      padding: 20px 20px 16px;
+      background: radial-gradient(53.47% 141.11% at 50% 50%, rgba(10, 10, 10, 0.02) 0.11%, rgba(0, 0, 0, 0) 100%), #ffffff;
+      overflow: hidden;
+    }
+    .tier-rewards-block-v2 .tr-header {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) minmax(280px, 1fr) auto;
+      gap: 14px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+    .tier-rewards-block-v2 .tr-title {
+      margin: 0;
+      font-family: Inter, sans-serif;
+      font-weight: 700;
+      font-size: 23px;
+      line-height: 36px;
+      color: #101828;
+    }
+    .tier-rewards-block-v2 .tr-subtitle {
+      margin: 2px 0 0;
+      font-family: Inter, sans-serif;
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 23px;
+      color: #4a5565;
+    }
+    .tier-rewards-block-v2 .tr-cart-text {
+      margin: 3px 0 0;
+      font-family: Inter, sans-serif;
+      font-weight: 400;
+      font-size: 18px;
+      line-height: 26px;
+      color: #4a5565;
+    }
+    .tier-rewards-block-v2 .tr-cart-text span {
+      font-weight: 600;
+      color: #101828;
+    }
+    .tier-rewards-block-v2 .tr-earned-line {
+      margin: 8px 0 0;
+      text-align: center;
+      font-family: "Plus Jakarta Sans", Inter, sans-serif;
+      font-weight: 500;
+      font-size: 40px;
+      line-height: 1.05;
+      color: #000;
+    }
+    .tier-rewards-block-v2 .tr-earned-line strong {
+      font-weight: 800;
+    }
+    .tier-rewards-block-v2 .tr-right {
+      display: flex;
+      justify-content: flex-end;
+    }
+    .tier-rewards-block-v2 .tr-earned-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 9999px;
+      padding: 9px 14px;
+      background: linear-gradient(90deg, #e17100 0%, #d08700 100%);
+      box-shadow: 0px 5px 8px -5px rgba(0, 0, 0, 0.1), 0px 13px 19px -4px rgba(0, 0, 0, 0.1);
+      color: #fff;
+      font-family: Inter, sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      line-height: 30px;
+    }
+    .tier-rewards-block-v2 .tr-pill-icon {
+      display: inline-flex;
+      width: 17px;
+      height: 17px;
+      align-items: center;
+      justify-content: center;
+    }
+    .tier-rewards-block-v2 .tr-milestones {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 10px;
+    }
+    .tier-rewards-block-v2 .tr-milestone {
+      text-align: center;
+      min-width: 94px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-icon {
+      display: inline-flex;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 2px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-money {
+      font-family: Inter, sans-serif;
+      font-weight: 600;
+      font-size: 18px;
+      line-height: 24px;
+      color: #101828;
+    }
+    .tier-rewards-block-v2 .tr-milestone-off {
+      font-family: Inter, sans-serif;
+      font-weight: 500;
+      font-size: 18px;
+      line-height: 24px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-off-green {
+      color: #2c8d2c;
+    }
+    .tier-rewards-block-v2 .tr-milestone-off-orange {
+      color: #a65f00;
+    }
+    .tier-rewards-block-v2 .tr-track {
+      width: 100%;
+      height: 28px;
+      border-radius: 9999px;
+      background: #e5e7eb;
+      overflow: hidden;
+    }
+    .tier-rewards-block-v2 .tr-track-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, #e17100 0%, #d08700 50%, #bb4d00 100%);
+      transition: width 260ms ease;
+    }
+    .tier-rewards-block-v2 .tr-cta {
+      margin: 16px 0 0;
+      text-align: center;
+      font-family: "Plus Jakarta Sans", Inter, sans-serif;
+      font-weight: 600;
+      font-size: 34px;
+      line-height: 1.2;
+      color: #101828;
+    }
+    .tier-rewards-block-v2 .tr-cta-accent {
+      font-weight: 700;
+      color: #bb4d00;
+    }
+    .tier-rewards-block-v2 .tr-next-up {
+      margin: 8px 0 0;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .tier-rewards-block-v2 .tr-next-muted {
+      font-family: Inter, sans-serif;
+      font-weight: 400;
+      font-size: 14px;
+      line-height: 19px;
+      color: #6a7282;
+    }
+    .tier-rewards-block-v2 .tr-next-strong {
+      font-family: Inter, sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      line-height: 19px;
+      color: #364153;
+    }
+    .tier-rewards-block-v2 .tr-next-accent {
+      font-family: Inter, sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      line-height: 19px;
+      color: #bb4d00;
+    }
+    @media (max-width: 1199px) {
+      .tier-rewards-block-v2 .tr-earned-line {
+        font-size: 34px;
+      }
+      .tier-rewards-block-v2 .tr-cta {
+        font-size: 28px;
+      }
+    }
+    @media (max-width: 899px) {
+      .tier-rewards-block-v2 {
+        padding: 16px 14px 14px;
+      }
+      .tier-rewards-block-v2 .tr-header {
+        grid-template-columns: 1fr;
+      }
+      .tier-rewards-block-v2 .tr-right {
+        justify-content: flex-start;
+      }
+      .tier-rewards-block-v2 .tr-earned-line {
+        margin-top: 0;
+        text-align: left;
+        font-size: 28px;
+      }
+      .tier-rewards-block-v2 .tr-milestone-money,
+      .tier-rewards-block-v2 .tr-milestone-off {
+        font-size: 15px;
+        line-height: 20px;
+      }
+      .tier-rewards-block-v2 .tr-track {
+        height: 22px;
+      }
+      .tier-rewards-block-v2 .tr-cta {
+        font-size: 22px;
+      }
+    }
+  </style>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Tier rewards progress",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "fallback_title",
+      "label": "Fallback title",
+      "default": "Instant Rewards"
+    },
+    {
+      "type": "text",
+      "id": "subtitle",
+      "label": "Subtitle",
+      "default": "Spend more in this cart to unlock bigger discounts"
+    },
+    {
+      "type": "range",
+      "id": "margin_top",
+      "label": "Margin top",
+      "min": 0,
+      "max": 80,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "margin_bottom",
+      "label": "Margin bottom",
+      "min": 0,
+      "max": 80,
+      "step": 4,
+      "unit": "px",
+      "default": 16
+    }
+  ]
+}
+{% endschema %}
+
