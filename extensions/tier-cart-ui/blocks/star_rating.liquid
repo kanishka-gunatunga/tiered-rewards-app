@@ -88,16 +88,249 @@
       <span class="tr-next-muted">→</span>
       <span class="tr-next-accent" data-tier-next-discount></span>
     </p>
-  </div>
+
+    <div class="tr-celebration-overlay" data-tier-celebration-overlay hidden aria-hidden="true">
+      <div class="tr-celebration-confetti-host" data-tier-confetti-host aria-hidden="true"></div>
+      <div class="tr-celebration-banner" role="status">
+        <span class="tr-celebration-banner-icon" aria-hidden="true">🎉</span>
+        <div class="tr-celebration-banner-copy">
+          <strong>Reward unlocked!</strong>
+          <p data-tier-celebration-message>You just earned a new discount!</p>
+        </div>
+        <button type="button" class="tr-celebration-banner-close" data-tier-celebration-close aria-label="Dismiss celebration">×</button>
+      </div>
+    </div>
 
   <script>
     (() => {
+      const CONFETTI_EMOJIS = ["🎉", "✨", "🎊", "⭐", "🥳", "💫"];
+
+      if (!window.__tierRewardsDismissCelebration) {
+        window.__tierRewardsDismissCelebration = () => {
+          window.clearTimeout(window.__tierRewardsCelebrateTimer);
+          document.getElementById("tier-rewards-page-toast")?.remove();
+          document.querySelectorAll("[data-tier-rewards-toast]").forEach((el) => el.remove());
+          document.getElementById("tier-rewards-global-confetti")?.remove();
+          document.querySelectorAll("[data-tier-celebration-overlay]").forEach((overlay) => {
+            overlay.classList.remove("is-visible");
+            overlay.hidden = true;
+            overlay.setAttribute("aria-hidden", "true");
+            overlay.style.display = "none";
+            overlay.style.opacity = "0";
+            const host = overlay.querySelector("[data-tier-confetti-host]");
+            if (host) host.textContent = "";
+            const banner = overlay.querySelector(".tr-celebration-banner");
+            if (banner) banner.style.display = "";
+          });
+        };
+      }
+
+      if (!window.__tierRewardsCelebrate) {
+        const injectCelebrationStyles = () => {
+          if (document.getElementById("tier-rewards-celebration-styles")) return;
+          const style = document.createElement("style");
+          style.id = "tier-rewards-celebration-styles";
+          style.textContent = `
+            @keyframes tier-rewards-confetti-fall {
+              0% { opacity: 0; transform: translate3d(0, -10vh, 0) rotate(0deg); }
+              12% { opacity: 1; }
+              100% { opacity: 0; transform: translate3d(calc(-40px + 80px * var(--tr-drift, 0.5)), 110vh, 0) rotate(720deg); }
+            }
+            .tier-rewards-confetti-piece {
+              position: absolute; top: -6%; line-height: 1; pointer-events: none;
+              animation: tier-rewards-confetti-fall linear forwards;
+            }
+          `;
+          document.head.appendChild(style);
+        };
+
+        window.__tierRewardsCelebrate = (tier, currencyCode) => {
+          if (!tier || !document.body) return;
+          if (window.__tierRewardsCelebrateBusy) return;
+
+          window.__tierRewardsCelebrateBusy = true;
+          window.__tierRewardsDismissCelebration();
+          injectCelebrationStyles();
+
+          const discount = (Number(tier.discountAmount || 0) / 100).toLocaleString(undefined, {
+            style: "currency",
+            currency: currencyCode || "USD",
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          });
+
+          const layer = document.createElement("div");
+          layer.id = "tier-rewards-global-confetti";
+          layer.style.cssText =
+            "position:fixed;inset:0;z-index:2147483646;pointer-events:none;overflow:hidden;";
+          for (let i = 0; i < 40; i += 1) {
+            const piece = document.createElement("span");
+            piece.className = "tier-rewards-confetti-piece";
+            piece.textContent = CONFETTI_EMOJIS[i % CONFETTI_EMOJIS.length];
+            piece.style.left = `${Math.random() * 100}%`;
+            piece.style.setProperty("--tr-drift", String(Math.random()));
+            piece.style.animationDuration = `${2 + Math.random() * 2}s`;
+            piece.style.animationDelay = `${Math.random() * 0.9}s`;
+            piece.style.fontSize = `${22 + Math.random() * 18}px`;
+            layer.appendChild(piece);
+          }
+          document.body.appendChild(layer);
+
+          let toast = document.getElementById("tier-rewards-page-toast");
+          if (!toast) {
+            toast = document.createElement("div");
+            toast.id = "tier-rewards-page-toast";
+            toast.setAttribute("data-tier-rewards-toast", "");
+            toast.setAttribute("role", "status");
+            document.body.appendChild(toast);
+          }
+          toast.setAttribute("aria-live", "polite");
+          toast.innerHTML = `<span style="font-size:36px">🎉</span><span><strong style="display:block;font-size:18px;color:#101828">Reward unlocked!</strong><span style="font-size:15px;color:#4a5565">You just earned ${discount} off on this order!</span></span>`;
+          toast.style.cssText =
+            "position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:2147483647;display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:14px;border:2px solid #e8a86b;background:#fffaf3;box-shadow:0 20px 40px rgba(187,77,0,.4);";
+
+          document.querySelectorAll("[data-tier-celebration-overlay]").forEach((overlay) => {
+            const banner = overlay.querySelector(".tr-celebration-banner");
+            if (banner) banner.style.display = "none";
+
+            const host = overlay.querySelector("[data-tier-confetti-host]");
+            if (host) {
+              host.textContent = "";
+              for (let i = 0; i < 18; i += 1) {
+                const piece = document.createElement("span");
+                piece.className = "tier-rewards-confetti-piece";
+                piece.textContent = CONFETTI_EMOJIS[i % CONFETTI_EMOJIS.length];
+                piece.style.left = `${4 + Math.random() * 92}%`;
+                piece.style.setProperty("--tr-drift", String(Math.random()));
+                piece.style.animationDuration = `${2.2 + Math.random() * 1.8}s`;
+                piece.style.animationDelay = `${Math.random() * 0.7}s`;
+                piece.style.fontSize = `${18 + Math.random() * 14}px`;
+                host.appendChild(piece);
+              }
+            }
+
+            overlay.removeAttribute("hidden");
+            overlay.hidden = false;
+            overlay.setAttribute("aria-hidden", "true");
+            overlay.style.display = "block";
+            overlay.style.background = "transparent";
+            overlay.style.backdropFilter = "none";
+            overlay.style.pointerEvents = "none";
+            overlay.style.opacity = "1";
+            overlay.classList.add("is-visible");
+          });
+
+          window.__tierRewardsCelebrateTimer = window.setTimeout(() => {
+            window.__tierRewardsDismissCelebration();
+            window.__tierRewardsCelebrateBusy = false;
+          }, 5000);
+        };
+      }
+
+      window.__tierRewardsFrozenEarned = {};
+
+      if (!window.__tierRewardsNetworkHooked) {
+        window.__tierRewardsNetworkHooked = true;
+        const isCartUrl = (url) =>
+          url &&
+          (/\/cart(\/(add|change|update|clear)(\.js)?|\.js)(\?|$)/i.test(String(url)) ||
+            /\/cart\?/i.test(String(url)));
+
+        const readSubtotal = (data) => {
+          if (!data || typeof data !== "object") return null;
+          const n = Number(data.items_subtotal_price ?? data.total_price);
+          return Number.isFinite(n) ? n : null;
+        };
+
+        const snapshotAll = () => {
+          document.querySelectorAll("[data-tier-rewards]").forEach((el) => {
+            const key = el.dataset.tierBlockId;
+            if (!key) return;
+            const earned = Number(el.dataset.trEarnedCents || 0);
+            window.__tierRewardsFrozenEarned[key] = earned;
+          });
+        };
+
+        const queueRefresh = (delay = 400) => {
+          window.clearTimeout(window.__tierRewardsRefreshTimer);
+          window.__tierRewardsRefreshTimer = window.setTimeout(
+            () => document.dispatchEvent(new CustomEvent("tier-rewards:refresh")),
+            delay,
+          );
+        };
+
+        const isCartControl = (target) =>
+          target instanceof HTMLElement &&
+          Boolean(
+            target.closest(
+              '[name="plus"], [name="minus"], .quantity__button, .cart-remove-button, .cart__remove, a[href*="/cart/change"], a[href="/cart/clear"], form[action*="/cart"], cart-items, .cart-items, .cart__items',
+            ),
+          );
+
+        if (!window.__tierRewardsDomListeners) {
+          window.__tierRewardsDomListeners = true;
+          ["cart:updated", "cart:refresh", "theme:cart:change", "theme:cart:update"].forEach((name) => {
+            document.addEventListener(name, () => {
+              snapshotAll();
+              queueRefresh();
+            });
+          });
+          document.addEventListener(
+            "pointerdown",
+            (event) => {
+              if (isCartControl(event.target)) snapshotAll();
+            },
+            true,
+          );
+          document.addEventListener("change", (event) => {
+            if (isCartControl(event.target)) {
+              snapshotAll();
+              queueRefresh();
+            }
+          });
+          document.addEventListener("click", (event) => {
+            if (isCartControl(event.target)) {
+              snapshotAll();
+              queueRefresh();
+            }
+          });
+          document.addEventListener("shopify:section:load", queueRefresh);
+        }
+
+        const originalFetch = window.fetch.bind(window);
+        window.fetch = async (...args) => {
+          const url = typeof args[0] === "string" ? args[0] : args[0]?.url;
+          if (isCartUrl(url)) snapshotAll();
+          const response = await originalFetch(...args);
+          if (isCartUrl(url)) queueRefresh();
+          return response;
+        };
+
+        const originalSend = XMLHttpRequest.prototype.send;
+        XMLHttpRequest.prototype.send = function (...sendArgs) {
+          if (isCartUrl(this.__tierRewardsUrl)) {
+            snapshotAll();
+            this.addEventListener("loadend", queueRefresh, { once: true });
+          }
+          return originalSend.apply(this, sendArgs);
+        };
+
+        const originalOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function (method, url, ...rest) {
+          this.__tierRewardsUrl = String(url);
+          return originalOpen.call(this, method, url, ...rest);
+        };
+      }
+
       const blockId = {{ block.id | json }};
-      const scope =
-        document.querySelector(`[data-tier-block-id="${blockId}"]`) ||
-        document.currentScript?.previousElementSibling;
-      if (!scope || scope.dataset.tierMounted === "true") return;
-      scope.dataset.tierMounted = "true";
+      let scope = document.currentScript?.closest("[data-tier-rewards]");
+      if (!scope) {
+        scope = document.querySelector(`[data-tier-rewards][data-tier-block-id="${blockId}"]`);
+      }
+      if (!scope) return;
+
+      const blockKey = scope.dataset.tierBlockId || String(blockId);
+      window.__tierRewardsActiveBlockId = blockKey;
 
       const rawTiers = {{ tiers_json | json }};
       const currencyCode = {{ cart.currency.iso_code | json }};
@@ -152,6 +385,61 @@
         cta: scope.querySelector("[data-tier-cta]"),
         nextSpend: scope.querySelector("[data-tier-next-spend]"),
         nextDiscount: scope.querySelector("[data-tier-next-discount]"),
+        celebrationOverlay: scope.querySelector("[data-tier-celebration-overlay]"),
+        confettiHost: scope.querySelector("[data-tier-confetti-host]"),
+        celebrationMessage: scope.querySelector("[data-tier-celebration-message]"),
+        celebrationClose: scope.querySelector("[data-tier-celebration-close]"),
+      };
+
+      const getLiveScope = () =>
+        scope.isConnected
+          ? scope
+          : document.querySelector(`[data-tier-rewards][data-tier-block-id="${blockKey}"]`);
+
+      const getLiveEls = () => {
+        const live = getLiveScope();
+        if (!live) return els;
+        return {
+          celebrationOverlay: live.querySelector("[data-tier-celebration-overlay]"),
+          confettiHost: live.querySelector("[data-tier-confetti-host]"),
+          celebrationMessage: live.querySelector("[data-tier-celebration-message]"),
+        };
+      };
+
+      if (!window.__tierRewardsCloseListener) {
+        window.__tierRewardsCloseListener = true;
+        document.addEventListener("click", (event) => {
+          const target = event.target;
+          if (!(target instanceof HTMLElement)) return;
+          if (!target.closest("[data-tier-celebration-close]")) return;
+          window.__tierRewardsDismissCelebration?.();
+          window.__tierRewardsCelebrateBusy = false;
+        });
+      }
+
+      const maybeCelebrateTierUnlock = (state) => {
+        const earned = Number(state.currentTier?.discountAmount || 0);
+        const live = getLiveScope() || scope;
+        if (!live) return;
+
+        let previousEarned = window.__tierRewardsFrozenEarned[blockKey];
+        const usedFrozen = previousEarned !== undefined;
+
+        if (usedFrozen) {
+          delete window.__tierRewardsFrozenEarned[blockKey];
+        } else {
+          previousEarned = Number(live.dataset.trEarnedCents ?? NaN);
+          if (Number.isNaN(previousEarned)) {
+            live.dataset.trEarnedCents = String(earned);
+            return;
+          }
+        }
+
+        if (earned > previousEarned && state.currentTier && !window.__tierRewardsCelebrateBusy) {
+          window.__tierRewardsCelebrate(state.currentTier, currencyCode);
+        }
+
+        live.dataset.trEarnedCents = String(earned);
       };
 
       const applyTemplate = (template, amountRemainingCents, fallback) => {
@@ -175,11 +463,14 @@
           leftIndex = 0;
           rightIndex = Math.min(1, maxIndex);
         } else if (currentIndex >= maxIndex) {
-          leftIndex = Math.max(maxIndex - 1, 0);
+          leftIndex = maxIndex;
+          rightIndex = maxIndex;
+        } else if (currentIndex === maxIndex - 1) {
+          leftIndex = currentIndex;
           rightIndex = maxIndex;
         } else {
-          leftIndex = currentIndex;
-          rightIndex = currentIndex + 1;
+          leftIndex = currentIndex + 1;
+          rightIndex = Math.min(currentIndex + 2, maxIndex);
         }
 
         const leftTier = tierAt(leftIndex);
@@ -187,27 +478,29 @@
         const currentTier = currentIndex >= 0 ? tierAt(currentIndex) : null;
         const nextTier = currentIndex < maxIndex ? tierAt(currentIndex + 1) : null;
 
-        const start = Number(leftTier.minSpend || 0);
-        const end = Number(rightTier.minSpend || start);
         let progressPercent = 0;
 
         if (currentIndex >= maxIndex) {
           progressPercent = 100;
         } else if (currentIndex < 0) {
-          if (start > 0) {
-            progressPercent = (subtotalCents / start) * 100;
-          } else if (end > 0) {
-            progressPercent = (subtotalCents / end) * 100;
+          const firstSpend = tiers[0].minSpend;
+          if (firstSpend > 0) {
+            progressPercent = (subtotalCents / firstSpend) * 100;
           }
-        } else if (end > start) {
-          progressPercent = ((subtotalCents - start) / (end - start)) * 100;
-        } else if (subtotalCents >= end && end > 0) {
-          progressPercent = 100;
+        } else {
+          const progressStart = tiers[currentIndex].minSpend;
+          const progressTarget = tiers[currentIndex + 1].minSpend;
+          const labelEnd = Number(rightTier.minSpend || progressTarget);
+          const spanEnd = Math.max(progressTarget, labelEnd);
+          if (spanEnd > progressStart) {
+            progressPercent = ((subtotalCents - progressStart) / (spanEnd - progressStart)) * 100;
+          }
         }
 
         progressPercent = Math.max(0, Math.min(100, progressPercent));
 
         return {
+          currentIndex,
           currentTier,
           nextTier,
           leftTier,
@@ -220,59 +513,87 @@
 
       const setProgress = (progressPercent) => {
         const clamped = Math.max(0, Math.min(100, Number(progressPercent) || 0));
+        const live = getLiveScope() || scope;
         const width = `${clamped.toFixed(2)}%`;
-        if (els.progress) {
-          els.progress.style.transform = `scaleX(${clamped / 100})`;
+        const progressEl = live.querySelector("[data-tier-progress]");
+        const trackEl = live.querySelector("[data-tier-track]");
+        if (progressEl) {
+          progressEl.style.transformOrigin = "left center";
+          progressEl.style.transform = `scaleX(${clamped / 100})`;
         }
-        if (els.track) {
-          els.track.style.setProperty("--tr-progress", width);
-          els.track.dataset.progress = clamped.toFixed(2);
+        if (trackEl) {
+          trackEl.style.setProperty("--tr-progress", width);
+          trackEl.dataset.progress = clamped.toFixed(2);
         }
       };
 
+      const getRenderEls = () => {
+        const live = getLiveScope();
+        if (!live) return els;
+        return {
+          cartText: live.querySelector("[data-tier-cart-text]"),
+          earnedValue: live.querySelector("[data-tier-earned-value]"),
+          earnedPillText: live.querySelector("[data-tier-earned-pill-text]"),
+          leftSpend: live.querySelector("[data-tier-left-spend]"),
+          leftDiscount: live.querySelector("[data-tier-left-discount]"),
+          rightSpend: live.querySelector("[data-tier-right-spend]"),
+          rightDiscount: live.querySelector("[data-tier-right-discount]"),
+          cta: live.querySelector("[data-tier-cta]"),
+          nextSpend: live.querySelector("[data-tier-next-spend]"),
+          nextDiscount: live.querySelector("[data-tier-next-discount]"),
+        };
+      };
+
       const render = (subtotalCents) => {
+        const live = getLiveScope();
+        if (!live) return;
+        const ui = getRenderEls();
         const state = computeState(subtotalCents);
         const currentDiscount = Number(state.currentTier?.discountAmount || 0);
         const nextDiscount = Number(state.nextTier?.discountAmount || 0);
 
-        if (els.cartText) {
-          els.cartText.textContent = `Current cart: ${formatMoney(state.subtotalCents, 2)}`;
+        if (ui.cartText) {
+          ui.cartText.textContent = `Current cart: ${formatMoney(state.subtotalCents, 2)}`;
         }
-        if (els.earnedValue) els.earnedValue.textContent = formatMoney(currentDiscount, 2);
-        if (els.earnedPillText) els.earnedPillText.textContent = `${formatMoney(currentDiscount, 2)} OFF`;
+        if (ui.earnedValue) ui.earnedValue.textContent = formatMoney(currentDiscount, 2);
+        if (ui.earnedPillText) ui.earnedPillText.textContent = `${formatMoney(currentDiscount, 2)} OFF`;
 
-        if (els.leftSpend) els.leftSpend.textContent = formatMoney(state.leftTier.minSpend, 2);
-        if (els.leftDiscount) els.leftDiscount.textContent = `${formatMoney(state.leftTier.discountAmount, 2)} OFF`;
-        if (els.rightSpend) els.rightSpend.textContent = formatMoney(state.rightTier.minSpend, 2);
-        if (els.rightDiscount) els.rightDiscount.textContent = `${formatMoney(state.rightTier.discountAmount, 2)} OFF`;
+        if (ui.leftSpend) ui.leftSpend.textContent = formatMoney(state.leftTier.minSpend, 2);
+        if (ui.leftDiscount) ui.leftDiscount.textContent = `${formatMoney(state.leftTier.discountAmount, 2)} OFF`;
+        if (ui.rightSpend) ui.rightSpend.textContent = formatMoney(state.rightTier.minSpend, 2);
+        if (ui.rightDiscount) ui.rightDiscount.textContent = `${formatMoney(state.rightTier.discountAmount, 2)} OFF`;
 
         setProgress(state.progressPercent);
 
-        if (els.cta) {
+        if (ui.cta) {
           if (state.nextTier) {
             const amountRemaining = formatMoney(state.remainingCents, 1);
             const discountPhrase = `${formatMoney(nextDiscount, 0)} discount!`;
             const escapeHtml = (text) =>
               text.replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]));
-            els.cta.innerHTML = `Add ${escapeHtml(amountRemaining)} more to unlock <span class="tr-cta-accent">${escapeHtml(discountPhrase)}</span>`;
+            ui.cta.innerHTML = `Add ${escapeHtml(amountRemaining)} more to unlock <span class="tr-cta-accent">${escapeHtml(discountPhrase)}</span>`;
           } else {
             const fallbackTop = `Great! You unlocked the highest reward: ${formatMoney(currentDiscount, 0)}.`;
-            els.cta.textContent = applyTemplate(state.currentTier?.messageUnlocked || "", 0, fallbackTop);
+            ui.cta.textContent = applyTemplate(state.currentTier?.messageUnlocked || "", 0, fallbackTop);
           }
         }
 
-        if (els.nextSpend && els.nextDiscount) {
+        if (ui.nextSpend && ui.nextDiscount) {
           const refTier = state.nextTier || state.rightTier;
-          els.nextSpend.textContent = formatMoney(refTier.minSpend, 2);
-          els.nextDiscount.textContent = `${formatMoney(refTier.discountAmount, 2)} OFF`;
+          ui.nextSpend.textContent = formatMoney(refTier.minSpend, 2);
+          ui.nextDiscount.textContent = `${formatMoney(refTier.discountAmount, 2)} OFF`;
         }
+
+        maybeCelebrateTierUnlock(state);
       };
+
+      let lastKnownSubtotal = defaultSubtotal;
 
       const readCartSubtotal = (cartData) => {
         const subtotal = Number(
-          cartData?.items_subtotal_price ?? cartData?.total_price ?? defaultSubtotal,
+          cartData?.items_subtotal_price ?? cartData?.total_price ?? lastKnownSubtotal,
         );
-        return Number.isFinite(subtotal) ? subtotal : defaultSubtotal;
+        return Number.isFinite(subtotal) ? subtotal : lastKnownSubtotal;
       };
 
       const fetchSubtotal = async () => {
@@ -282,95 +603,83 @@
             cache: "no-store",
             headers: { Accept: "application/json" },
           });
-          if (!response.ok) return defaultSubtotal;
+          if (!response.ok) return lastKnownSubtotal;
           const cartData = await response.json();
-          return readCartSubtotal(cartData);
+          lastKnownSubtotal = readCartSubtotal(cartData);
+          const live = getLiveScope();
+          if (live) live.dataset.tierDefaultSubtotal = String(lastKnownSubtotal);
+          return lastKnownSubtotal;
         } catch {
-          return defaultSubtotal;
+          return lastKnownSubtotal;
         }
       };
 
-      let refreshTimer = null;
-      let pollTimer = null;
+      let refreshGeneration = 0;
 
       const refresh = async () => {
+        const token = ++refreshGeneration;
         const subtotal = await fetchSubtotal();
+        if (token !== refreshGeneration) return;
+        const activeScope = getLiveScope();
+        if (!activeScope) return;
         render(subtotal);
       };
 
-      const queueRefresh = (delay = 250) => {
-        if (refreshTimer) window.clearTimeout(refreshTimer);
-        refreshTimer = window.setTimeout(refresh, delay);
+      const bootstrap = async () => {
+        const subtotal = await fetchSubtotal();
+        const state = computeState(subtotal);
+        const live = getLiveScope() || scope;
+        const earned = String(state.currentTier?.discountAmount || 0);
+        const pendingUnlock = Object.prototype.hasOwnProperty.call(
+          window.__tierRewardsFrozenEarned,
+          blockKey,
+        );
+
+        if (!pendingUnlock) {
+          live.dataset.trEarnedCents = earned;
+        }
+
+        window.__tierRewardsCelebrateBusy = false;
+        scope.dataset.trCelebrateReady = "1";
+        render(subtotal);
       };
 
       render(defaultSubtotal);
-      refresh();
+      bootstrap();
 
-      const cartEvents = ["cart:updated", "cart:refresh", "theme:cart:change", "theme:cart:update"];
-      cartEvents.forEach((eventName) => {
-        document.addEventListener(eventName, () => queueRefresh(150));
-      });
+      window.__tierRewardsRefreshHandlers = window.__tierRewardsRefreshHandlers || {};
+      window.__tierRewardsRefreshHandlers[blockKey] = refresh;
 
-      document.addEventListener("change", (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLElement)) return;
-        if (target.closest('form[action*="/cart"], cart-items, .cart-items, .cart__items')) {
-          queueRefresh();
-        }
-      });
-
-      document.addEventListener("submit", (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLFormElement)) return;
-        if (target.action.includes("/cart")) queueRefresh(400);
-      });
-
-      document.addEventListener("click", (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLElement)) return;
-        if (
-          target.closest(
-            '[name="plus"], [name="minus"], .quantity__button, .cart-remove-button, .cart__remove, a[href*="/cart/change"], a[href="/cart/clear"]',
-          )
-        ) {
-          queueRefresh(400);
-        }
-      });
-
-      document.addEventListener("shopify:section:load", () => queueRefresh(100));
-
-      if (!window.__tierRewardsFetchHooked) {
-        window.__tierRewardsFetchHooked = true;
-        const cartPathPattern = /\/cart(\/add|\/change|\/update|\/clear)(\.js)?(\?|$)/;
-        const originalFetch = window.fetch.bind(window);
-        window.fetch = async (...args) => {
-          const response = await originalFetch(...args);
-          const request = args[0];
-          const url = typeof request === "string" ? request : request?.url;
-          if (url && cartPathPattern.test(url)) {
-            document.dispatchEvent(new CustomEvent("tier-rewards:cart-mutated"));
-          }
-          return response;
-        };
+      if (!window.__tierRewardsRefreshListener) {
+        window.__tierRewardsRefreshListener = true;
+        document.addEventListener("tier-rewards:refresh", () => {
+          const handlers = window.__tierRewardsRefreshHandlers || {};
+          Object.values(handlers).forEach((handler) => {
+            try {
+              handler();
+            } catch {
+              /* ignore */
+            }
+          });
+        });
       }
 
-      document.addEventListener("tier-rewards:cart-mutated", () => queueRefresh(200));
+      if (!window.__tierRewardsPollTimer) {
+        window.__tierRewardsPollTimer = window.setInterval(() => {
+          document.dispatchEvent(new CustomEvent("tier-rewards:refresh"));
+        }, 2500);
+      }
 
-      window.addEventListener("focus", refresh);
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") refresh();
-      });
-
-      pollTimer = window.setInterval(refresh, 2000);
       window.addEventListener("beforeunload", () => {
-        if (refreshTimer) window.clearTimeout(refreshTimer);
-        if (pollTimer) window.clearInterval(pollTimer);
+        delete window.__tierRewardsRefreshHandlers?.[blockKey];
       });
     })();
   </script>
+  </div>
 
   <style>
     .tier-rewards-block-v2 {
+      position: relative;
       border: 1px solid #ece8e2;
       border-radius: 16px;
       padding: 20px 20px 16px;
@@ -378,13 +687,111 @@
         #ffffff;
       overflow: hidden;
     }
+    .tier-rewards-block-v2 .tr-celebration-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 14px 12px;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(3px);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 280ms ease;
+    }
+    .tier-rewards-block-v2 .tr-celebration-overlay.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .tier-rewards-block-v2 .tr-celebration-overlay[hidden] {
+      display: none !important;
+    }
+    .tier-rewards-block-v2 .tr-celebration-confetti-host {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .tier-rewards-block-v2 .tr-celebration-banner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: min(100%, 400px);
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid #f3e8d8;
+      background: linear-gradient(135deg, #fffaf3 0%, #ffffff 55%, #fff7ed 100%);
+      box-shadow:
+        0 16px 36px -12px rgba(187, 77, 0, 0.28),
+        0 6px 16px -8px rgba(16, 24, 40, 0.16);
+      transform: translateY(-8px) scale(0.98);
+      transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .tier-rewards-block-v2 .tr-celebration-overlay.is-visible .tr-celebration-banner {
+      transform: translateY(0) scale(1);
+    }
+    .tier-rewards-block-v2 .tr-celebration-banner-icon {
+      flex-shrink: 0;
+      font-size: 32px;
+      line-height: 1;
+    }
+    .tier-rewards-block-v2 .tr-celebration-banner-copy strong {
+      display: block;
+      font-family: 'Plus Jakarta Sans', Inter, sans-serif;
+      font-weight: 700;
+      font-size: 17px;
+      line-height: 1.25;
+      color: #101828;
+    }
+    .tier-rewards-block-v2 .tr-celebration-banner-copy p {
+      margin: 4px 0 0;
+      font-family: Inter, sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #4a5565;
+    }
+    .tier-rewards-block-v2 .tr-celebration-banner-copy em {
+      font-style: normal;
+      font-weight: 700;
+      color: #bb4d00;
+    }
+    .tier-rewards-block-v2 .tr-celebration-banner-close {
+      flex-shrink: 0;
+      width: 30px;
+      height: 30px;
+      border: 0;
+      border-radius: 9999px;
+      background: #f3f4f6;
+      color: #6a7282;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .tier-rewards-block-v2 .tr-confetti-piece {
+      position: absolute;
+      top: -8%;
+      line-height: 1;
+      user-select: none;
+      pointer-events: none;
+    }
+    .tier-rewards-block-v2 .tr-confetti-fall {
+      animation: tr-confetti-fall 3s linear forwards;
+    }
+    .tier-rewards-block-v2 .tr-confetti-rise {
+      animation: tr-confetti-rise 3s linear forwards;
+    }
     .tier-rewards-block-v2 .tr-header {
       position: relative;
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 14px;
       align-items: start;
-      margin-bottom: 14px;
+      margin-bottom: 6px;
       min-height: 56px;
     }
     .tier-rewards-block-v2 .tr-left {
@@ -476,7 +883,9 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
+      margin-top: 12px;
       margin-bottom: 10px;
+      clear: both;
     }
     .tier-rewards-block-v2 .tr-milestone {
       min-width: 94px;
@@ -643,6 +1052,145 @@
       font-size: 14px;
       line-height: 19px;
       color: #bb4d00;
+    }
+    .tr-celebration-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483000;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .tr-celebration-layer.is-active .tr-confetti-piece {
+      opacity: 1;
+    }
+    .tr-confetti-piece {
+      position: absolute;
+      top: -10%;
+      opacity: 0;
+      line-height: 1;
+      will-change: transform, opacity;
+      user-select: none;
+      pointer-events: none;
+    }
+    .tr-confetti-fall {
+      animation: tr-confetti-fall linear forwards;
+    }
+    .tr-confetti-rise {
+      animation: tr-confetti-rise linear forwards;
+    }
+    @keyframes tr-confetti-fall {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, -10vh, 0) rotate(0deg);
+      }
+      10% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(calc(-30px + 60px * var(--tr-drift, 0.5)), 110vh, 0) rotate(720deg);
+      }
+    }
+    @keyframes tr-confetti-rise {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, 110vh, 0) rotate(0deg);
+      }
+      12% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(calc(-40px + 80px * var(--tr-drift, 0.5)), -20vh, 0) rotate(-540deg);
+      }
+    }
+    .tr-celebration-toast {
+      position: fixed;
+      left: 50%;
+      top: 24px;
+      z-index: 2147483001;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: min(92vw, 420px);
+      padding: 16px 18px;
+      border-radius: 16px;
+      border: 1px solid #f3e8d8;
+      background: linear-gradient(135deg, #fffaf3 0%, #ffffff 55%, #fff7ed 100%);
+      box-shadow:
+        0 18px 40px -12px rgba(187, 77, 0, 0.28),
+        0 8px 20px -10px rgba(16, 24, 40, 0.18);
+      pointer-events: auto;
+      opacity: 0;
+      transform: translate3d(-50%, -18px, 0) scale(0.96);
+      transition: opacity 280ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .tr-celebration-toast.is-visible {
+      opacity: 1;
+      transform: translate3d(-50%, 0, 0) scale(1);
+    }
+    .tr-celebration-layer.is-leaving .tr-celebration-toast {
+      opacity: 0;
+      transform: translate3d(-50%, -12px, 0) scale(0.98);
+    }
+    .tr-celebration-toast-icon {
+      flex-shrink: 0;
+      font-size: 34px;
+      line-height: 1;
+    }
+    .tr-celebration-toast-copy {
+      flex: 1;
+      min-width: 0;
+    }
+    .tr-celebration-toast-copy strong {
+      display: block;
+      font-family: 'Plus Jakarta Sans', Inter, sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 1.25;
+      color: #101828;
+    }
+    .tr-celebration-toast-copy p {
+      margin: 4px 0 0;
+      font-family: Inter, sans-serif;
+      font-weight: 500;
+      font-size: 15px;
+      line-height: 1.4;
+      color: #4a5565;
+    }
+    .tr-celebration-toast-copy em {
+      font-style: normal;
+      font-weight: 700;
+      color: #bb4d00;
+    }
+    .tr-celebration-toast-close {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border: 0;
+      border-radius: 9999px;
+      background: #f3f4f6;
+      color: #6a7282;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 160ms ease, color 160ms ease;
+    }
+    .tr-celebration-toast-close:hover {
+      background: #e5e7eb;
+      color: #364153;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tr-confetti-piece {
+        display: none;
+      }
+      .tr-celebration-toast {
+        transition: opacity 160ms ease;
+        transform: translate3d(-50%, 0, 0);
+      }
+      .tr-celebration-toast.is-visible {
+        transform: translate3d(-50%, 0, 0);
+      }
     }
     @media (max-width: 1199px) {
       .tier-rewards-block-v2 .tr-cta,
