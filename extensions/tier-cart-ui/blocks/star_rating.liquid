@@ -1,16 +1,12 @@
 {% liquid
-  assign rewards_entry = shop.metaobjects['$app:tier_rewards_config']['default']
+  assign rewards_entry = shop.metaobjects['$app:tier_rewards_config'].default
   assign rewards_enabled = false
-  assign rewards_title = block.settings.fallback_title
   assign tiers_json = blank
-  assign cart_subtotal_cents = cart.total_price
+  assign cart_subtotal_cents = cart.items_subtotal_price | default: cart.total_price
 
   if rewards_entry
     if rewards_entry.enabled.value == true or rewards_entry.enabled.value == 'true'
       assign rewards_enabled = true
-    endif
-    if rewards_entry.program_title.value != blank
-      assign rewards_title = rewards_entry.program_title.value
     endif
     assign tiers_json = rewards_entry.tiers.value
   endif
@@ -21,14 +17,14 @@
     class="tier-rewards-block-v2"
     style="margin-top: {{ block.settings.margin_top }}px; margin-bottom: {{ block.settings.margin_bottom }}px;"
     data-tier-rewards
+    data-tier-block-id="{{ block.id }}"
     data-tier-default-subtotal="{{ cart_subtotal_cents }}"
     {{ block.shopify_attributes }}
   >
     <div class="tr-header">
       <div class="tr-left">
-        <h3 class="tr-title">{{ rewards_title }}</h3>
-        <p class="tr-subtitle">{{ block.settings.subtitle }}</p>
-        <p class="tr-cart-text">Current cart: <span data-tier-cart-value>{{ cart.total_price | money }}</span></p>
+        <h3 class="tr-title">{{ block.settings.heading }}</h3>
+        <p class="tr-cart-text" data-tier-cart-text>Current cart: {{ cart.total_price | money }}</p>
       </div>
       <div class="tr-center">
         <p class="tr-earned-line">
@@ -38,42 +34,50 @@
       <div class="tr-right">
         <span class="tr-earned-pill" data-tier-earned-pill>
           <span class="tr-pill-icon" aria-hidden="true">
-            <svg width="17" height="17" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g clip-path="url(#clip0_2400_9318)">
               <path d="M8.43611 13.1584C8.36031 12.8646 8.20718 12.5965 7.99263 12.3819C7.77808 12.1674 7.50995 12.0143 7.21615 11.9385L2.00779 10.5954C1.91893 10.5702 1.84073 10.5167 1.78504 10.443C1.72935 10.3693 1.69922 10.2794 1.69922 10.1871C1.69922 10.0947 1.72935 10.0048 1.78504 9.93115C1.84073 9.85745 1.91893 9.80393 2.00779 9.77871L7.21615 8.43481C7.50985 8.35909 7.7779 8.20608 7.99244 7.99169C8.20698 7.7773 8.36018 7.50935 8.43611 7.21571L9.77916 2.00735C9.80412 1.91814 9.85759 1.83954 9.93139 1.78356C10.0052 1.72757 10.0953 1.69727 10.1879 1.69727C10.2806 1.69727 10.3707 1.72757 10.4445 1.78356C10.5183 1.83954 10.5717 1.91814 10.5967 2.00735L11.9389 7.21571C12.0147 7.50951 12.1678 7.77763 12.3824 7.99218C12.5969 8.20673 12.8651 8.35987 13.1589 8.43566L18.3672 9.77786C18.4568 9.80257 18.5358 9.85597 18.5921 9.92989C18.6483 10.0038 18.6788 10.0942 18.6788 10.1871C18.6788 10.28 18.6483 10.3703 18.5921 10.4442C18.5358 10.5181 18.4568 10.5716 18.3672 10.5963L13.1589 11.9385C12.8651 12.0143 12.5969 12.1674 12.3824 12.3819C12.1678 12.5965 12.0147 12.8646 11.9389 13.1584L10.5959 18.3668C10.5709 18.456 10.5174 18.5346 10.4436 18.5906C10.3698 18.6466 10.2797 18.6769 10.1871 18.6769C10.0944 18.6769 10.0044 18.6466 9.93055 18.5906C9.85674 18.5346 9.80328 18.456 9.77831 18.3668L8.43611 13.1584Z" stroke="white" stroke-width="1.69792" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M16.9766 2.54688V5.94271" stroke="white" stroke-width="1.69792" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M18.6771 4.24414H15.2812" stroke="white" stroke-width="1.69792" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3.39844 14.4316V16.1296" stroke="white" stroke-width="1.69792" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4.24479 15.2812H2.54688" stroke="white" stroke-width="1.69792" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+              <defs>
+              <clipPath id="clip0_2400_9318">
+              <rect width="20.375" height="20.375" fill="white"/>
+              </clipPath>
+              </defs>
             </svg>
           </span>
-          <span data-tier-earned-pill-text>{{ 0 | money }} OFF</span>
+          <span class="tr-earned-pill-text" data-tier-earned-pill-text>{{ 0 | money }} OFF</span>
         </span>
       </div>
     </div>
 
     <div class="tr-milestones">
       <div class="tr-milestone tr-milestone-left">
-        <span class="tr-milestone-icon">
-          <svg width="48" height="48" viewBox="0 0 66 66" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="33" cy="33" r="33" fill="white"/>
-            <circle cx="33.1265" cy="33.1284" r="22.602" fill="#C76B00"/>
-            <circle cx="33.1235" cy="33.1245" r="14.6016" fill="white"/>
-          </svg>
+        <span class="tr-milestone-icon" aria-hidden="true">
+          <span class="tr-milestone-badge tr-milestone-badge--current"></span>
         </span>
         <div class="tr-milestone-money" data-tier-left-spend></div>
         <div class="tr-milestone-off tr-milestone-off-green" data-tier-left-discount></div>
       </div>
       <div class="tr-milestone tr-milestone-right">
-        <span class="tr-milestone-icon">
-          <svg width="48" height="48" viewBox="0 0 66 66" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="33" cy="33" r="33" fill="white"/>
-            <circle cx="33" cy="33" r="23" fill="#C76B00"/>
-            <path d="M33.2109 43.5C32.5709 43.5 32.0419 42.971 32.0419 42.331C32.0419 38.842 29.2369 36.038 25.7489 36.038C25.1089 36.038 24.5859 35.509 24.5859 34.869C24.5859 34.229 25.1089 33.706 25.7489 33.706C29.2369 33.706 32.0419 30.895 32.0419 27.413C32.0419 26.773 32.5709 26.25 33.2109 26.25C33.8509 26.25 34.3739 26.773 34.3739 27.413C34.3739 30.901 37.1849 33.706 40.6669 33.706C41.3069 33.706 41.8299 34.229 41.8299 34.869C41.8299 35.509 41.3069 36.038 40.6669 36.038C37.1789 36.038 34.3739 38.842 34.3739 42.331C34.3739 42.971 33.8509 43.5 33.2109 43.5ZM30.2209 34.875C31.3979 35.503 32.3659 36.472 32.9939 37.648C33.6219 36.472 34.5909 35.503 35.7669 34.875C34.5909 34.247 33.6219 33.279 32.9939 32.103C32.3659 33.279 31.3979 34.247 30.2209 34.875Z" fill="white"/>
-          </svg>
+        <span class="tr-milestone-icon" aria-hidden="true">
+          <span class="tr-milestone-badge tr-milestone-badge--next">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M22 7L13.5 15.5L8.5 10.5L2 17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M16 7H22V13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
         </span>
         <div class="tr-milestone-money" data-tier-right-spend></div>
         <div class="tr-milestone-off tr-milestone-off-orange" data-tier-right-discount></div>
       </div>
     </div>
 
-    <div class="tr-track">
-      <div class="tr-track-fill" data-tier-progress></div>
+    <div class="tr-track" data-tier-track>
+      <div class="tr-track-fill" data-tier-progress aria-hidden="true"></div>
     </div>
 
     <p class="tr-cta" data-tier-cta></p>
@@ -88,7 +92,10 @@
 
   <script>
     (() => {
-      const scope = document.currentScript?.previousElementSibling;
+      const blockId = {{ block.id | json }};
+      const scope =
+        document.querySelector(`[data-tier-block-id="${blockId}"]`) ||
+        document.currentScript?.previousElementSibling;
       if (!scope || scope.dataset.tierMounted === "true") return;
       scope.dataset.tierMounted = "true";
 
@@ -104,6 +111,9 @@
           } catch {
             return [];
           }
+        }
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && Array.isArray(parsed.tiers)) {
+          parsed = parsed.tiers;
         }
         if (!Array.isArray(parsed)) return [];
         return parsed
@@ -130,13 +140,14 @@
         });
 
       const els = {
-        cartValue: scope.querySelector("[data-tier-cart-value]"),
+        cartText: scope.querySelector("[data-tier-cart-text]"),
         earnedValue: scope.querySelector("[data-tier-earned-value]"),
         earnedPillText: scope.querySelector("[data-tier-earned-pill-text]"),
         leftSpend: scope.querySelector("[data-tier-left-spend]"),
         leftDiscount: scope.querySelector("[data-tier-left-discount]"),
         rightSpend: scope.querySelector("[data-tier-right-spend]"),
         rightDiscount: scope.querySelector("[data-tier-right-discount]"),
+        track: scope.querySelector("[data-tier-track]"),
         progress: scope.querySelector("[data-tier-progress]"),
         cta: scope.querySelector("[data-tier-cta]"),
         nextSpend: scope.querySelector("[data-tier-next-spend]"),
@@ -178,15 +189,23 @@
 
         const start = Number(leftTier.minSpend || 0);
         const end = Number(rightTier.minSpend || start);
-        let progressPercent = 100;
-        if (end > start) {
+        let progressPercent = 0;
+
+        if (currentIndex >= maxIndex) {
+          progressPercent = 100;
+        } else if (currentIndex < 0) {
+          if (start > 0) {
+            progressPercent = (subtotalCents / start) * 100;
+          } else if (end > 0) {
+            progressPercent = (subtotalCents / end) * 100;
+          }
+        } else if (end > start) {
           progressPercent = ((subtotalCents - start) / (end - start)) * 100;
-          progressPercent = Math.max(0, Math.min(100, progressPercent));
+        } else if (subtotalCents >= end && end > 0) {
+          progressPercent = 100;
         }
-        if (currentIndex < 0 && end > 0) {
-          progressPercent = Math.max(0, Math.min(100, (subtotalCents / end) * 100));
-        }
-        if (currentIndex >= maxIndex) progressPercent = 100;
+
+        progressPercent = Math.max(0, Math.min(100, progressPercent));
 
         return {
           currentTier,
@@ -199,12 +218,26 @@
         };
       };
 
+      const setProgress = (progressPercent) => {
+        const clamped = Math.max(0, Math.min(100, Number(progressPercent) || 0));
+        const width = `${clamped.toFixed(2)}%`;
+        if (els.progress) {
+          els.progress.style.transform = `scaleX(${clamped / 100})`;
+        }
+        if (els.track) {
+          els.track.style.setProperty("--tr-progress", width);
+          els.track.dataset.progress = clamped.toFixed(2);
+        }
+      };
+
       const render = (subtotalCents) => {
         const state = computeState(subtotalCents);
         const currentDiscount = Number(state.currentTier?.discountAmount || 0);
         const nextDiscount = Number(state.nextTier?.discountAmount || 0);
 
-        if (els.cartValue) els.cartValue.textContent = formatMoney(state.subtotalCents, 2);
+        if (els.cartText) {
+          els.cartText.textContent = `Current cart: ${formatMoney(state.subtotalCents, 2)}`;
+        }
         if (els.earnedValue) els.earnedValue.textContent = formatMoney(currentDiscount, 2);
         if (els.earnedPillText) els.earnedPillText.textContent = `${formatMoney(currentDiscount, 2)} OFF`;
 
@@ -213,16 +246,15 @@
         if (els.rightSpend) els.rightSpend.textContent = formatMoney(state.rightTier.minSpend, 2);
         if (els.rightDiscount) els.rightDiscount.textContent = `${formatMoney(state.rightTier.discountAmount, 2)} OFF`;
 
-        if (els.progress) els.progress.style.width = `${state.progressPercent.toFixed(2)}%`;
+        setProgress(state.progressPercent);
 
         if (els.cta) {
           if (state.nextTier) {
-            const fallback = `Add ${formatMoney(state.remainingCents, 1)} more to unlock ${formatMoney(nextDiscount, 0)} discount!`;
-            const source = state.currentTier ? state.currentTier.messageClose : state.nextTier.messageFar;
-            const full = applyTemplate(source, state.remainingCents, fallback);
-            const highlighted = formatMoney(nextDiscount, 0);
-            const escaped = full.replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]));
-            els.cta.innerHTML = escaped.replace(highlighted, `<span class="tr-cta-accent">${highlighted}</span>`);
+            const amountRemaining = formatMoney(state.remainingCents, 1);
+            const discountPhrase = `${formatMoney(nextDiscount, 0)} discount!`;
+            const escapeHtml = (text) =>
+              text.replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]));
+            els.cta.innerHTML = `Add ${escapeHtml(amountRemaining)} more to unlock <span class="tr-cta-accent">${escapeHtml(discountPhrase)}</span>`;
           } else {
             const fallbackTop = `Great! You unlocked the highest reward: ${formatMoney(currentDiscount, 0)}.`;
             els.cta.textContent = applyTemplate(state.currentTier?.messageUnlocked || "", 0, fallbackTop);
@@ -236,52 +268,103 @@
         }
       };
 
+      const readCartSubtotal = (cartData) => {
+        const subtotal = Number(
+          cartData?.items_subtotal_price ?? cartData?.total_price ?? defaultSubtotal,
+        );
+        return Number.isFinite(subtotal) ? subtotal : defaultSubtotal;
+      };
+
       const fetchSubtotal = async () => {
         try {
-          const response = await fetch("/cart.js", { credentials: "same-origin" });
+          const response = await fetch("/cart.js", {
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: { Accept: "application/json" },
+          });
           if (!response.ok) return defaultSubtotal;
           const cartData = await response.json();
-          return Number(cartData?.total_price ?? defaultSubtotal);
+          return readCartSubtotal(cartData);
         } catch {
           return defaultSubtotal;
         }
       };
 
-      let timer = null;
+      let refreshTimer = null;
+      let pollTimer = null;
+
       const refresh = async () => {
         const subtotal = await fetchSubtotal();
         render(subtotal);
       };
 
+      const queueRefresh = (delay = 250) => {
+        if (refreshTimer) window.clearTimeout(refreshTimer);
+        refreshTimer = window.setTimeout(refresh, delay);
+      };
+
       render(defaultSubtotal);
       refresh();
 
-      const queueRefresh = () => setTimeout(refresh, 250);
+      const cartEvents = ["cart:updated", "cart:refresh", "theme:cart:change", "theme:cart:update"];
+      cartEvents.forEach((eventName) => {
+        document.addEventListener(eventName, () => queueRefresh(150));
+      });
+
       document.addEventListener("change", (event) => {
         const target = event.target;
         if (!(target instanceof HTMLElement)) return;
-        if (target.closest('form[action*="/cart"]')) queueRefresh();
-      });
-      document.addEventListener("submit", (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLFormElement)) return;
-        if (target.action.includes("/cart")) queueRefresh();
-      });
-      document.addEventListener("click", (event) => {
-        const target = event.target;
-        if (!(target instanceof HTMLElement)) return;
-        if (target.closest('[name="plus"], [name="minus"], .quantity__button, a[href="/cart/clear"]')) {
+        if (target.closest('form[action*="/cart"], cart-items, .cart-items, .cart__items')) {
           queueRefresh();
         }
       });
+
+      document.addEventListener("submit", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLFormElement)) return;
+        if (target.action.includes("/cart")) queueRefresh(400);
+      });
+
+      document.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        if (
+          target.closest(
+            '[name="plus"], [name="minus"], .quantity__button, .cart-remove-button, .cart__remove, a[href*="/cart/change"], a[href="/cart/clear"]',
+          )
+        ) {
+          queueRefresh(400);
+        }
+      });
+
+      document.addEventListener("shopify:section:load", () => queueRefresh(100));
+
+      if (!window.__tierRewardsFetchHooked) {
+        window.__tierRewardsFetchHooked = true;
+        const cartPathPattern = /\/cart(\/add|\/change|\/update|\/clear)(\.js)?(\?|$)/;
+        const originalFetch = window.fetch.bind(window);
+        window.fetch = async (...args) => {
+          const response = await originalFetch(...args);
+          const request = args[0];
+          const url = typeof request === "string" ? request : request?.url;
+          if (url && cartPathPattern.test(url)) {
+            document.dispatchEvent(new CustomEvent("tier-rewards:cart-mutated"));
+          }
+          return response;
+        };
+      }
+
+      document.addEventListener("tier-rewards:cart-mutated", () => queueRefresh(200));
+
       window.addEventListener("focus", refresh);
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") refresh();
       });
 
-      timer = window.setInterval(refresh, 3000);
+      pollTimer = window.setInterval(refresh, 2000);
       window.addEventListener("beforeunload", () => {
-        if (timer) window.clearInterval(timer);
+        if (refreshTimer) window.clearTimeout(refreshTimer);
+        if (pollTimer) window.clearInterval(pollTimer);
       });
     })();
   </script>
@@ -291,59 +374,77 @@
       border: 1px solid #ece8e2;
       border-radius: 16px;
       padding: 20px 20px 16px;
-      background: radial-gradient(53.47% 141.11% at 50% 50%, rgba(10, 10, 10, 0.02) 0.11%, rgba(0, 0, 0, 0) 100%), #ffffff;
+      background: radial-gradient(53.47% 141.11% at 50% 50%, rgba(10, 10, 10, 0.02) 0.11%, rgba(0, 0, 0, 0) 100%),
+        #ffffff;
       overflow: hidden;
     }
     .tier-rewards-block-v2 .tr-header {
+      position: relative;
       display: grid;
-      grid-template-columns: minmax(240px, 1fr) minmax(280px, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) auto;
       gap: 14px;
       align-items: start;
       margin-bottom: 14px;
+      min-height: 56px;
+    }
+    .tier-rewards-block-v2 .tr-left {
+      position: relative;
+      z-index: 2;
+      max-width: 42%;
     }
     .tier-rewards-block-v2 .tr-title {
       margin: 0;
       font-family: Inter, sans-serif;
       font-weight: 700;
-      font-size: 23px;
-      line-height: 36px;
+      font-style: normal;
+      font-size: 23.29px;
+      line-height: 36.23px;
+      letter-spacing: 0;
       color: #101828;
-    }
-    .tier-rewards-block-v2 .tr-subtitle {
-      margin: 2px 0 0;
-      font-family: Inter, sans-serif;
-      font-weight: 400;
-      font-size: 16px;
-      line-height: 23px;
-      color: #4a5565;
     }
     .tier-rewards-block-v2 .tr-cart-text {
       margin: 3px 0 0;
       font-family: Inter, sans-serif;
       font-weight: 400;
-      font-size: 18px;
-      line-height: 26px;
+      font-style: normal;
+      font-size: 18.11px;
+      line-height: 25.88px;
+      letter-spacing: 0;
       color: #4a5565;
     }
-    .tier-rewards-block-v2 .tr-cart-text span {
-      font-weight: 600;
-      color: #101828;
+    .tier-rewards-block-v2 .tr-center {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      z-index: 1;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: calc(100% - 280px);
+      pointer-events: none;
     }
     .tier-rewards-block-v2 .tr-earned-line {
-      margin: 8px 0 0;
+      margin: 0;
+      width: auto;
+      max-width: 100%;
       text-align: center;
-      font-family: "Plus Jakarta Sans", Inter, sans-serif;
+      font-family: 'Plus Jakarta Sans', Inter, sans-serif;
       font-weight: 500;
-      font-size: 40px;
-      line-height: 1.05;
-      color: #000;
+      font-style: normal;
+      font-size: 27px;
+      line-height: 100%;
+      letter-spacing: 0;
+      color: #000000;
     }
     .tier-rewards-block-v2 .tr-earned-line strong {
-      font-weight: 800;
+      font-weight: 700;
     }
     .tier-rewards-block-v2 .tr-right {
+      position: relative;
+      z-index: 2;
       display: flex;
       justify-content: flex-end;
+      grid-column: 2;
+      grid-row: 1;
     }
     .tier-rewards-block-v2 .tr-earned-pill {
       display: inline-flex;
@@ -353,11 +454,16 @@
       padding: 9px 14px;
       background: linear-gradient(90deg, #e17100 0%, #d08700 100%);
       box-shadow: 0px 5px 8px -5px rgba(0, 0, 0, 0.1), 0px 13px 19px -4px rgba(0, 0, 0, 0.1);
-      color: #fff;
+    }
+    .tier-rewards-block-v2 .tr-earned-pill-text {
       font-family: Inter, sans-serif;
       font-weight: 700;
-      font-size: 20px;
-      line-height: 30px;
+      font-style: normal;
+      font-size: 20.38px;
+      line-height: 30.56px;
+      letter-spacing: 0;
+      color: #ffffff;
+      white-space: nowrap;
     }
     .tier-rewards-block-v2 .tr-pill-icon {
       display: inline-flex;
@@ -373,63 +479,143 @@
       margin-bottom: 10px;
     }
     .tier-rewards-block-v2 .tr-milestone {
-      text-align: center;
       min-width: 94px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-left {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+    }
+    .tier-rewards-block-v2 .tr-milestone-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      text-align: right;
+    }
+    .tier-rewards-block-v2 .tr-milestone-left .tr-milestone-icon {
+      justify-content: flex-start;
+    }
+    .tier-rewards-block-v2 .tr-milestone-right .tr-milestone-icon {
+      justify-content: flex-end;
     }
     .tier-rewards-block-v2 .tr-milestone-icon {
       display: inline-flex;
+      align-items: center;
+      justify-content: center;
       width: 48px;
       height: 48px;
       margin-bottom: 2px;
     }
+    .tier-rewards-block-v2 .tr-milestone-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 42.31px;
+      height: 42.31px;
+      border-radius: 50%;
+      border: 5.29px solid #ffffff;
+      box-sizing: border-box;
+      background: linear-gradient(135deg, #fe9a00 0%, #bb4d00 100%);
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge--current {
+      box-shadow:
+        0px 5.29px 7.93px -5.29px rgba(0, 0, 0, 0.1),
+        0px 13.22px 19.83px -3.97px rgba(0, 0, 0, 0.1);
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge--current::after {
+      content: "";
+      display: block;
+      width: 14.6px;
+      height: 14.6px;
+      border-radius: 50%;
+      background: #ffffff;
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge--next {
+      width: 48px;
+      height: 48px;
+      border: 6px solid #ffffff;
+      padding: 0 6px;
+      background: linear-gradient(135deg, #d08700 0%, #bb4d00 100%);
+      box-shadow:
+        0px 6px 9px -6px rgba(0, 0, 0, 0.1),
+        0px 15px 22.5px -4.5px rgba(0, 0, 0, 0.1);
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge--next svg {
+      display: block;
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+    }
     .tier-rewards-block-v2 .tr-milestone-money {
+      margin-top: 4px;
       font-family: Inter, sans-serif;
       font-weight: 600;
-      font-size: 18px;
-      line-height: 24px;
+      font-size: 15.87px;
+      line-height: 21.16px;
+      letter-spacing: 0;
       color: #101828;
     }
     .tier-rewards-block-v2 .tr-milestone-off {
       font-family: Inter, sans-serif;
       font-weight: 500;
-      font-size: 18px;
-      line-height: 24px;
+      letter-spacing: 0;
     }
     .tier-rewards-block-v2 .tr-milestone-off-green {
+      font-size: 15.87px;
+      line-height: 21.16px;
       color: #2c8d2c;
     }
     .tier-rewards-block-v2 .tr-milestone-off-orange {
+      font-size: 18px;
+      line-height: 24px;
       color: #a65f00;
     }
     .tier-rewards-block-v2 .tr-track {
+      position: relative;
+      display: block;
       width: 100%;
-      height: 28px;
+      height: 22px;
       border-radius: 9999px;
       background: #e5e7eb;
       overflow: hidden;
     }
     .tier-rewards-block-v2 .tr-track-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: block;
       height: 100%;
-      width: 0%;
+      width: 100%;
       border-radius: 9999px;
       background: linear-gradient(90deg, #e17100 0%, #d08700 50%, #bb4d00 100%);
-      transition: width 260ms ease;
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: transform 260ms ease;
+      will-change: transform;
+      pointer-events: none;
     }
     .tier-rewards-block-v2 .tr-cta {
-      margin: 16px 0 0;
+      margin: 24px 0 20px;
       text-align: center;
-      font-family: "Plus Jakarta Sans", Inter, sans-serif;
+      font-family: 'Plus Jakarta Sans', Inter, sans-serif;
       font-weight: 600;
-      font-size: 34px;
-      line-height: 1.2;
+      font-size: 26px;
+      line-height: 20px;
+      letter-spacing: 0;
       color: #101828;
     }
     .tier-rewards-block-v2 .tr-cta-accent {
+      font-family: 'Plus Jakarta Sans', Inter, sans-serif;
       font-weight: 700;
+      font-size: 26px;
+      line-height: 20px;
+      letter-spacing: 0;
       color: #bb4d00;
     }
     .tier-rewards-block-v2 .tr-next-up {
-      margin: 8px 0 0;
+      margin: 0;
       text-align: center;
       display: flex;
       justify-content: center;
@@ -459,11 +645,10 @@
       color: #bb4d00;
     }
     @media (max-width: 1199px) {
-      .tier-rewards-block-v2 .tr-earned-line {
-        font-size: 34px;
-      }
-      .tier-rewards-block-v2 .tr-cta {
-        font-size: 28px;
+      .tier-rewards-block-v2 .tr-cta,
+      .tier-rewards-block-v2 .tr-cta-accent {
+        font-size: 24px;
+        line-height: 20px;
       }
     }
     @media (max-width: 899px) {
@@ -472,25 +657,35 @@
       }
       .tier-rewards-block-v2 .tr-header {
         grid-template-columns: 1fr;
+        min-height: 0;
+        gap: 10px;
+      }
+      .tier-rewards-block-v2 .tr-left {
+        max-width: none;
       }
       .tier-rewards-block-v2 .tr-right {
         justify-content: flex-start;
+        grid-column: 1;
+      }
+      .tier-rewards-block-v2 .tr-center {
+        position: static;
+        left: auto;
+        transform: none;
+        width: 100%;
+        max-width: none;
+        pointer-events: auto;
       }
       .tier-rewards-block-v2 .tr-earned-line {
-        margin-top: 0;
-        text-align: left;
-        font-size: 28px;
-      }
-      .tier-rewards-block-v2 .tr-milestone-money,
-      .tier-rewards-block-v2 .tr-milestone-off {
-        font-size: 15px;
-        line-height: 20px;
+        text-align: center;
+        font-size: 24px;
       }
       .tier-rewards-block-v2 .tr-track {
-        height: 22px;
+        height: 18px;
       }
-      .tier-rewards-block-v2 .tr-cta {
+      .tier-rewards-block-v2 .tr-cta,
+      .tier-rewards-block-v2 .tr-cta-accent {
         font-size: 22px;
+        line-height: 20px;
       }
     }
   </style>
@@ -503,15 +698,9 @@
   "settings": [
     {
       "type": "text",
-      "id": "fallback_title",
-      "label": "Fallback title",
-      "default": "Instant Rewards"
-    },
-    {
-      "type": "text",
-      "id": "subtitle",
-      "label": "Subtitle",
-      "default": "Spend more in this cart to unlock bigger discounts"
+      "id": "heading",
+      "label": "Heading",
+      "default": "Unlock More Savings!"
     },
     {
       "type": "range",
@@ -536,4 +725,3 @@
   ]
 }
 {% endschema %}
-
