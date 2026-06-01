@@ -80,9 +80,6 @@ export function configToFormRows(config: TierRewardsConfig): RewardTierFormRow[]
   return config.tiers.map((tier) => ({
     minSpendDollars: centsToDollarString(tier.minSpend),
     discountDollars: centsToDollarString(tier.discountAmount),
-    messageFar: tier.messageFar,
-    messageClose: tier.messageClose,
-    messageUnlocked: tier.messageUnlocked,
   }));
 }
 
@@ -96,19 +93,13 @@ function parseTiersJson(value: unknown): RewardTier[] {
     const discountAmount = Number(r.discountAmount);
     if (
       !Number.isFinite(minSpend) ||
-      !Number.isFinite(discountAmount) ||
-      typeof r.messageFar !== "string" ||
-      typeof r.messageClose !== "string" ||
-      typeof r.messageUnlocked !== "string"
+      !Number.isFinite(discountAmount)
     ) {
       continue;
     }
     tiers.push({
       minSpend,
       discountAmount,
-      messageFar: r.messageFar,
-      messageClose: r.messageClose,
-      messageUnlocked: r.messageUnlocked,
     });
   }
   return tiers;
@@ -234,13 +225,6 @@ export function validateTierRewardsConfig(
 
     previousMinSpend = tier.minSpend;
     previousDiscountAmount = tier.discountAmount;
-
-    if (!tier.messageFar.trim() || !tier.messageClose.trim()) {
-      errors.push(`${label}: far and close messages are required.`);
-    }
-    if (!tier.messageUnlocked.trim()) {
-      errors.push(`${label}: unlocked message is required.`);
-    }
   }
 
   if (config.enabled && config.tiers.length === 0) {
@@ -272,9 +256,6 @@ export function parseTierRowsFromFormData(formData: FormData): RewardTier[] {
     tiers.push({
       minSpend,
       discountAmount,
-      messageFar: String(row.messageFar ?? "").trim(),
-      messageClose: String(row.messageClose ?? "").trim(),
-      messageUnlocked: String(row.messageUnlocked ?? "").trim(),
     });
   }
 

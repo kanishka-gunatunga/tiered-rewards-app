@@ -43,24 +43,15 @@
             "jsonValue": [
               {
                 "minSpend": 300100,
-                "discountAmount": 30000,
-                "messageFar": "",
-                "messageClose": "",
-                "messageUnlocked": ""
+                "discountAmount": 30000
               },
               {
                 "minSpend": 400100,
-                "discountAmount": 40000,
-                "messageFar": "",
-                "messageClose": "",
-                "messageUnlocked": ""
+                "discountAmount": 40000
               },
               {
                 "minSpend": 500100,
-                "discountAmount": 50000,
-                "messageFar": "",
-                "messageClose": "",
-                "messageUnlocked": ""
+                "discountAmount": 50000
               }
             ]
           }

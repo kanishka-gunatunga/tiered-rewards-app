@@ -353,9 +353,6 @@
           .map((tier) => ({
             minSpend: Number(tier?.minSpend || 0),
             discountAmount: Number(tier?.discountAmount || 0),
-            messageFar: String(tier?.messageFar || ""),
-            messageClose: String(tier?.messageClose || ""),
-            messageUnlocked: String(tier?.messageUnlocked || ""),
           }))
           .filter((tier) => tier.minSpend > 0 && tier.discountAmount > 0)
           .sort((a, b) => a.minSpend - b.minSpend);
@@ -440,11 +437,6 @@
         }
 
         live.dataset.trEarnedCents = String(earned);
-      };
-
-      const applyTemplate = (template, amountRemainingCents, fallback) => {
-        if (!template || !template.trim()) return fallback;
-        return template.replaceAll("{amount_remaining}", formatMoney(Math.max(0, amountRemainingCents)));
       };
 
       const tierAt = (index) => tiers[Math.max(0, Math.min(index, tiers.length - 1))];
@@ -573,8 +565,7 @@
               text.replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]));
             ui.cta.innerHTML = `Add ${escapeHtml(amountRemaining)} more to unlock <span class="tr-cta-accent">${escapeHtml(discountPhrase)}</span>`;
           } else {
-            const fallbackTop = `Great! You unlocked the highest reward: ${formatMoney(currentDiscount, 0)}.`;
-            ui.cta.textContent = applyTemplate(state.currentTier?.messageUnlocked || "", 0, fallbackTop);
+            ui.cta.textContent = `Great! You unlocked the highest reward: ${formatMoney(currentDiscount, 0)}.`;
           }
         }
 

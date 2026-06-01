@@ -248,9 +248,7 @@ export default function TierSettingsPage() {
             <h3 className={styles.sectionTitle}>Spend tiers (cart subtotal)</h3>
             <p className={styles.hint}>
               Discounts apply to the current cart subtotal (not lifetime
-              loyalty). Amounts are in your shop currency. Use placeholders{" "}
-              <code>{"{amount_remaining}"}</code> and{" "}
-              <code>{"{next_discount}"}</code> in messages.
+              loyalty). Amounts are in your shop currency.
             </p>
 
             <input type="hidden" name="tiersJson" value={JSON.stringify(tiers)} />
@@ -287,36 +285,6 @@ export default function TierSettingsPage() {
                       autoComplete="off"
                     />
                   </div>
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.label}>Message — far from tier</label>
-                  <textarea
-                    className={styles.textarea}
-                    value={tier.messageFar}
-                    onChange={(e) =>
-                      updateTier(index, "messageFar", e.target.value)
-                    }
-                  />
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.label}>Message — close to tier</label>
-                  <textarea
-                    className={styles.textarea}
-                    value={tier.messageClose}
-                    onChange={(e) =>
-                      updateTier(index, "messageClose", e.target.value)
-                    }
-                  />
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.label}>Message — tier unlocked</label>
-                  <textarea
-                    className={styles.textarea}
-                    value={tier.messageUnlocked}
-                    onChange={(e) =>
-                      updateTier(index, "messageUnlocked", e.target.value)
-                    }
-                  />
                 </div>
                 <button
                   type="button"

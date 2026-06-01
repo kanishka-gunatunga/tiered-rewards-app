@@ -22,27 +22,18 @@
       "jsonValue": {
         "enabled": true,
         "tiers": [
-          {
-            "minSpend": 300100,
-            "discountAmount": 30000,
-            "messageFar": "",
-            "messageClose": "",
-            "messageUnlocked": ""
-          },
-          {
-            "minSpend": 400100,
-            "discountAmount": 40000,
-            "messageFar": "",
-            "messageClose": "",
-            "messageUnlocked": ""
-          },
-          {
-            "minSpend": 500100,
-            "discountAmount": 50000,
-            "messageFar": "",
-            "messageClose": "",
-            "messageUnlocked": ""
-          }
+              {
+                "minSpend": 300100,
+                "discountAmount": 30000
+              },
+              {
+                "minSpend": 400100,
+                "discountAmount": 40000
+              },
+              {
+                "minSpend": 500100,
+                "discountAmount": 50000
+              }
         ]
       }
     }
