@@ -25,19 +25,11 @@ function centsToDecimalAmount(cents: number): string {
   return (cents / 100).toFixed(2);
 }
 
-function parseFunctionConfig(input: CartInput): FunctionConfig | null {
-  const jsonValue = input.discount.metafield?.jsonValue;
-  if (!jsonValue || typeof jsonValue !== 'object' || Array.isArray(jsonValue)) {
-    return null;
-  }
-
-  const record = jsonValue as Record<string, unknown>;
-  if (!Array.isArray(record.tiers)) {
-    return null;
-  }
+function parseTierRows(rawTiers: unknown): TierRow[] {
+  if (!Array.isArray(rawTiers)) return [];
 
   const tiers: TierRow[] = [];
-  for (const row of record.tiers) {
+  for (const row of rawTiers) {
     if (!row || typeof row !== 'object') continue;
     const tier = row as Record<string, unknown>;
     const minSpend = Number(tier.minSpend);
@@ -54,11 +46,72 @@ function parseFunctionConfig(input: CartInput): FunctionConfig | null {
   }
 
   tiers.sort((a, b) => a.minSpend - b.minSpend);
+  return tiers;
+}
+
+/** Legacy configs stored dollar amounts (e.g. 3001) instead of cents (300100). */
+function normalizeTiersToCents(tiers: TierRow[]): TierRow[] {
+  if (tiers.length === 0) return tiers;
+
+  const looksLikeDollars = tiers.every(
+    (tier) => tier.minSpend < 10_000 && tier.discountAmount < 10_000,
+  );
+
+  if (!looksLikeDollars) return tiers;
+
+  return tiers.map((tier) => ({
+    minSpend: Math.round(tier.minSpend * 100),
+    discountAmount: Math.round(tier.discountAmount * 100),
+  }));
+}
+
+function parseRecordConfig(record: Record<string, unknown>): FunctionConfig | null {
+  if (!Array.isArray(record.tiers)) return null;
+
+  const tiers = normalizeTiersToCents(parseTierRows(record.tiers));
+  if (tiers.length === 0) return null;
 
   return {
     enabled: record.enabled !== false,
     tiers,
   };
+}
+
+function parseMetaobjectConfig(input: CartInput): FunctionConfig | null {
+  const node = input.shop.metaobject;
+  if (!node) return null;
+
+  const enabledRaw = node.enabled?.value;
+  const enabled = enabledRaw !== 'false' && enabledRaw !== '0';
+
+  const tiers = normalizeTiersToCents(parseTierRows(node.tiers?.jsonValue));
+  if (tiers.length === 0) return null;
+
+  return {enabled, tiers};
+}
+
+function parseDiscountMetafieldConfig(input: CartInput): FunctionConfig | null {
+  const jsonValue = input.discount.metafield?.jsonValue;
+  if (!jsonValue || typeof jsonValue !== 'object' || Array.isArray(jsonValue)) {
+    return null;
+  }
+
+  return parseRecordConfig(jsonValue as Record<string, unknown>);
+}
+
+function parseFunctionConfig(input: CartInput): FunctionConfig | null {
+  return parseMetaobjectConfig(input) ?? parseDiscountMetafieldConfig(input);
+}
+
+function getCartSubtotalCents(input: CartInput): number {
+  let fromLines = 0;
+  for (const line of input.cart.lines) {
+    fromLines += parseMoneyToCents(line.cost.subtotalAmount.amount);
+  }
+
+  if (fromLines > 0) return fromLines;
+
+  return parseMoneyToCents(input.cart.cost.subtotalAmount.amount);
 }
 
 function findBestTier(tiers: TierRow[], subtotalCents: number): TierRow | null {
@@ -91,7 +144,7 @@ export function cartLinesDiscountsGenerateRun(
     return {operations: []};
   }
 
-  const subtotalCents = parseMoneyToCents(input.cart.cost.subtotalAmount.amount);
+  const subtotalCents = getCartSubtotalCents(input);
   const bestTier = findBestTier(functionConfig.tiers, subtotalCents);
 
   if (!bestTier) {

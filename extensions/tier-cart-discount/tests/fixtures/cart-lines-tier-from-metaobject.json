@@ -1,0 +1,97 @@
+{
+  "payload": {
+    "export": "cart-lines-discounts-generate-run",
+    "target": "cart.lines.discounts.generate.run",
+    "input": {
+      "cart": {
+        "cost": {
+          "subtotalAmount": {
+            "amount": "4501.00"
+          }
+        },
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/0",
+            "cost": {
+              "subtotalAmount": {
+                "amount": "4501.00"
+              }
+            }
+          }
+        ]
+      },
+      "discount": {
+        "discountClasses": ["ORDER"],
+        "metafield": {
+          "jsonValue": {
+            "enabled": true,
+            "tiers": [
+              {
+                "minSpend": 300100,
+                "discountAmount": 30000
+              }
+            ]
+          }
+        }
+      },
+      "shop": {
+        "metaobject": {
+          "enabled": {
+            "value": "true"
+          },
+          "tiers": {
+            "jsonValue": [
+              {
+                "minSpend": 300100,
+                "discountAmount": 30000,
+                "messageFar": "",
+                "messageClose": "",
+                "messageUnlocked": ""
+              },
+              {
+                "minSpend": 400100,
+                "discountAmount": 40000,
+                "messageFar": "",
+                "messageClose": "",
+                "messageUnlocked": ""
+              },
+              {
+                "minSpend": 500100,
+                "discountAmount": 50000,
+                "messageFar": "",
+                "messageClose": "",
+                "messageUnlocked": ""
+              }
+            ]
+          }
+        }
+      }
+    },
+    "output": {
+      "operations": [
+        {
+          "orderDiscountsAdd": {
+            "candidates": [
+              {
+                "message": "$400.00 tier reward unlocked",
+                "targets": [
+                  {
+                    "orderSubtotal": {
+                      "excludedCartLineIds": []
+                    }
+                  }
+                ],
+                "value": {
+                  "fixedAmount": {
+                    "amount": "400.00"
+                  }
+                }
+              }
+            ],
+            "selectionStrategy": "FIRST"
+          }
+        }
+      ]
+    }
+  }
+}

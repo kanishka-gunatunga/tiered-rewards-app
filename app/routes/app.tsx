@@ -38,6 +38,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     let checkoutDiscountActive = false;
     try {
       checkoutDiscountActive = await hasTierCartDiscount(admin);
+      if (config.enabled) {
+        await syncTierRewardsDiscount(admin, config);
+        checkoutDiscountActive = true;
+      }
     } catch (discountCheckError) {
       console.error("[app] discount status check failed:", discountCheckError);
     }
