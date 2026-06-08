@@ -1,13 +1,15 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "4715f56b046ff7be152da0fca9f1f4fc"
+client_id = "204f64bb421473fb6aacf675c3e1ab41"
 application_url = "https://rewards.aicloud24.com"
 embedded = true
-name = "Cart Tier Rewards"
+name = "Cart Tier Rewards Public"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "write_metaobjects,write_metaobject_definitions,write_discounts"
+optional_scopes = [ ]
+use_legacy_install_flow = false
 
 # Tier rewards program settings (one entry per shop; tiers stored as JSON array).
 # Storefront + discount function read this; admin app writes via metaobjectUpsert.

@@ -39,6 +39,15 @@ const METAOBJECT_BY_HANDLE_QUERY = `#graphql
       homepageSubtitle: field(key: "homepage_subtitle") {
         value
       }
+      primaryColor: field(key: "primary_color") {
+        value
+      }
+      secondaryColor: field(key: "secondary_color") {
+        value
+      }
+      backgroundColor: field(key: "background_color") {
+        value
+      }
       tiers: field(key: "tiers") {
         jsonValue
       }
@@ -127,6 +136,9 @@ export async function loadTierRewardsConfig(
         enabled?: { value?: string | null };
         programTitle?: { value?: string | null };
         homepageSubtitle?: { value?: string | null };
+        primaryColor?: { value?: string | null };
+        secondaryColor?: { value?: string | null };
+        backgroundColor?: { value?: string | null };
         tiers?: { jsonValue?: unknown };
       } | null;
     };
@@ -157,6 +169,9 @@ export async function loadTierRewardsConfig(
     homepageSubtitle:
       node.homepageSubtitle?.value ||
       DEFAULT_TIER_REWARDS_CONFIG.homepageSubtitle,
+    primaryColor: node.primaryColor?.value || DEFAULT_TIER_REWARDS_CONFIG.primaryColor,
+    secondaryColor: node.secondaryColor?.value || DEFAULT_TIER_REWARDS_CONFIG.secondaryColor,
+    backgroundColor: node.backgroundColor?.value || DEFAULT_TIER_REWARDS_CONFIG.backgroundColor,
     tiers: tiers.length > 0 ? tiers : DEFAULT_TIER_REWARDS_CONFIG.tiers,
   };
 }
@@ -268,6 +283,9 @@ export function parseConfigFromFormData(formData: FormData): TierRewardsConfig {
     enabled: formData.get("enabled") === "on",
     programTitle: String(formData.get("programTitle") ?? "").trim(),
     homepageSubtitle: String(formData.get("homepageSubtitle") ?? "").trim(),
+    primaryColor: String(formData.get("primaryColor") ?? "").trim() || DEFAULT_TIER_REWARDS_CONFIG.primaryColor,
+    secondaryColor: String(formData.get("secondaryColor") ?? "").trim() || DEFAULT_TIER_REWARDS_CONFIG.secondaryColor,
+    backgroundColor: String(formData.get("backgroundColor") ?? "").trim() || DEFAULT_TIER_REWARDS_CONFIG.backgroundColor,
     tiers: parseTierRowsFromFormData(formData),
   };
 }
@@ -293,6 +311,9 @@ export async function saveTierRewardsConfig(
           { key: "enabled", value: config.enabled ? "true" : "false" },
           { key: "program_title", value: config.programTitle },
           { key: "homepage_subtitle", value: config.homepageSubtitle },
+          { key: "primary_color", value: config.primaryColor },
+          { key: "secondary_color", value: config.secondaryColor },
+          { key: "background_color", value: config.backgroundColor },
           { key: "tiers", value: JSON.stringify(config.tiers) },
         ],
       },

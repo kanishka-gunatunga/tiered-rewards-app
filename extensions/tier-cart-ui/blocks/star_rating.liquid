@@ -2,6 +2,9 @@
   assign rewards_entry = shop.metaobjects['$app:tier_rewards_config'].default
   assign rewards_enabled = false
   assign tiers_json = blank
+  assign primary_color = 'var(--tr-primary)'
+  assign secondary_color = 'var(--tr-secondary)'
+  assign background_color = 'var(--tr-bg)'
   assign cart_subtotal_cents = cart.items_subtotal_price | default: cart.total_price
 
   if rewards_entry
@@ -9,13 +12,22 @@
       assign rewards_enabled = true
     endif
     assign tiers_json = rewards_entry.tiers.value
+    if rewards_entry.primary_color.value != blank
+      assign primary_color = rewards_entry.primary_color.value
+    endif
+    if rewards_entry.secondary_color.value != blank
+      assign secondary_color = rewards_entry.secondary_color.value
+    endif
+    if rewards_entry.background_color.value != blank
+      assign background_color = rewards_entry.background_color.value
+    endif
   endif
 %}
 
 {% if rewards_enabled and tiers_json != blank %}
   <div
     class="tier-rewards-block-v2"
-    style="margin-top: {{ block.settings.margin_top }}px; margin-bottom: {{ block.settings.margin_bottom }}px;"
+    style="--tr-primary: {{ primary_color }}; --tr-secondary: {{ secondary_color }}; --tr-bg: {{ background_color }}; margin-top: {{ block.settings.margin_top }}px; margin-bottom: {{ block.settings.margin_bottom }}px;"
     data-tier-rewards
     data-tier-block-id="{{ block.id }}"
     data-tier-default-subtotal="{{ cart_subtotal_cents }}"
@@ -187,7 +199,7 @@
           toast.setAttribute("aria-live", "polite");
           toast.innerHTML = `<span style="font-size:36px">🎉</span><span><strong style="display:block;font-size:18px;color:#101828">Reward unlocked!</strong><span style="font-size:15px;color:#4a5565">You just earned ${discount} off on this order!</span></span>`;
           toast.style.cssText =
-            "position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:2147483647;display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:14px;border:2px solid #e8a86b;background:#fffaf3;box-shadow:0 20px 40px rgba(187,77,0,.4);";
+            "position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:2147483647;display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:14px;border:2px solid #e8a86b;background:var(--tr-bg);box-shadow:0 20px 40px rgba(187,77,0,.4);";
 
           document.querySelectorAll("[data-tier-celebration-overlay]").forEach((overlay) => {
             const banner = overlay.querySelector(".tr-celebration-banner");
@@ -715,7 +727,7 @@
       padding: 14px 16px;
       border-radius: 14px;
       border: 1px solid #f3e8d8;
-      background: linear-gradient(135deg, #fffaf3 0%, #ffffff 55%, #fff7ed 100%);
+      background: linear-gradient(135deg, var(--tr-bg) 0%, #ffffff 55%, #fff7ed 100%);
       box-shadow:
         0 16px 36px -12px rgba(187, 77, 0, 0.28),
         0 6px 16px -8px rgba(16, 24, 40, 0.16);
@@ -749,7 +761,7 @@
     .tier-rewards-block-v2 .tr-celebration-banner-copy em {
       font-style: normal;
       font-weight: 700;
-      color: #bb4d00;
+      color: var(--tr-primary);
     }
     .tier-rewards-block-v2 .tr-celebration-banner-close {
       flex-shrink: 0;
@@ -850,7 +862,7 @@
       gap: 8px;
       border-radius: 9999px;
       padding: 9px 14px;
-      background: linear-gradient(90deg, #e17100 0%, #d08700 100%);
+      background: linear-gradient(90deg, var(--tr-secondary) 0%, #d08700 100%);
       box-shadow: 0px 5px 8px -5px rgba(0, 0, 0, 0.1), 0px 13px 19px -4px rgba(0, 0, 0, 0.1);
     }
     .tier-rewards-block-v2 .tr-earned-pill-text {
@@ -917,7 +929,7 @@
       border-radius: 50%;
       border: 5.29px solid #ffffff;
       box-sizing: border-box;
-      background: linear-gradient(135deg, #fe9a00 0%, #bb4d00 100%);
+      background: linear-gradient(135deg, #fe9a00 0%, var(--tr-primary) 100%);
     }
     .tier-rewards-block-v2 .tr-milestone-badge--current {
       box-shadow:
@@ -937,7 +949,7 @@
       height: 48px;
       border: 6px solid #ffffff;
       padding: 0 6px;
-      background: linear-gradient(135deg, #d08700 0%, #bb4d00 100%);
+      background: linear-gradient(135deg, #d08700 0%, var(--tr-primary) 100%);
       box-shadow:
         0px 6px 9px -6px rgba(0, 0, 0, 0.1),
         0px 15px 22.5px -4.5px rgba(0, 0, 0, 0.1);
@@ -989,7 +1001,7 @@
       height: 100%;
       width: 100%;
       border-radius: 9999px;
-      background: linear-gradient(90deg, #e17100 0%, #d08700 50%, #bb4d00 100%);
+      background: linear-gradient(90deg, var(--tr-secondary) 0%, #d08700 50%, var(--tr-primary) 100%);
       transform: scaleX(0);
       transform-origin: left center;
       transition: transform 260ms ease;
@@ -1012,7 +1024,7 @@
       font-size: 26px;
       line-height: 20px;
       letter-spacing: 0;
-      color: #bb4d00;
+      color: var(--tr-primary);
     }
     .tier-rewards-block-v2 .tr-next-up {
       margin: 0;
@@ -1042,7 +1054,7 @@
       font-weight: 600;
       font-size: 14px;
       line-height: 19px;
-      color: #bb4d00;
+      color: var(--tr-primary);
     }
     .tr-celebration-layer {
       position: fixed;
@@ -1107,7 +1119,7 @@
       padding: 16px 18px;
       border-radius: 16px;
       border: 1px solid #f3e8d8;
-      background: linear-gradient(135deg, #fffaf3 0%, #ffffff 55%, #fff7ed 100%);
+      background: linear-gradient(135deg, var(--tr-bg) 0%, #ffffff 55%, #fff7ed 100%);
       box-shadow:
         0 18px 40px -12px rgba(187, 77, 0, 0.28),
         0 8px 20px -10px rgba(16, 24, 40, 0.18);
@@ -1152,7 +1164,7 @@
     .tr-celebration-toast-copy em {
       font-style: normal;
       font-weight: 700;
-      color: #bb4d00;
+      color: var(--tr-primary);
     }
     .tr-celebration-toast-close {
       flex-shrink: 0;

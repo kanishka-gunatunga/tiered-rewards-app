@@ -70,6 +70,9 @@ export default function TierSettingsPage() {
   const [homepageSubtitle, setHomepageSubtitle] = useState(
     savedConfig.homepageSubtitle,
   );
+  const [primaryColor, setPrimaryColor] = useState(savedConfig.primaryColor);
+  const [secondaryColor, setSecondaryColor] = useState(savedConfig.secondaryColor);
+  const [backgroundColor, setBackgroundColor] = useState(savedConfig.backgroundColor);
   const [enabled, setEnabled] = useState(savedConfig.enabled);
   const errors = actionData && !actionData.ok ? actionData.errors : [];
   const checkoutDiscountActive = actionData?.ok
@@ -81,6 +84,9 @@ export default function TierSettingsPage() {
     setTitle(savedConfig.title);
     setProgramTitle(savedConfig.programTitle);
     setHomepageSubtitle(savedConfig.homepageSubtitle);
+    setPrimaryColor(savedConfig.primaryColor);
+    setSecondaryColor(savedConfig.secondaryColor);
+    setBackgroundColor(savedConfig.backgroundColor);
     setEnabled(savedConfig.enabled);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- savedConfig tracks formRows updates
   }, [formRows]);
@@ -140,45 +146,69 @@ export default function TierSettingsPage() {
           )}
 
           {!loadError && (
-            <div
-              className={`${styles.statusCard} ${
-                checkoutDiscountActive
-                  ? styles.statusCardSuccess
-                  : styles.statusCardPending
-              }`}
-              role="status"
-            >
-              <div className={styles.statusCardHeader}>
-                <span
-                  className={`${styles.statusBadge} ${
-                    checkoutDiscountActive
-                      ? styles.statusBadgeSuccess
-                      : styles.statusBadgePending
-                  }`}
-                >
-                  {checkoutDiscountActive ? "Active" : "Setup needed"}
-                </span>
-                <h3 className={styles.statusCardTitle}>Checkout discounts</h3>
-              </div>
-              {checkoutDiscountActive ? (
-                <>
+            <>
+              <div
+                className={`${styles.statusCard} ${
+                  checkoutDiscountActive
+                    ? styles.statusCardSuccess
+                    : styles.statusCardPending
+                }`}
+                role="status"
+              >
+                <div className={styles.statusCardHeader}>
+                  <span
+                    className={`${styles.statusBadge} ${
+                      checkoutDiscountActive
+                        ? styles.statusBadgeSuccess
+                        : styles.statusBadgePending
+                    }`}
+                  >
+                    {checkoutDiscountActive ? "Active" : "Setup needed"}
+                  </span>
+                  <h3 className={styles.statusCardTitle}>Checkout discounts</h3>
+                </div>
+                {checkoutDiscountActive ? (
+                  <>
+                    <p className={styles.statusCardBody}>
+                      Tier discounts are applied automatically at checkout when a
+                      customer&apos;s cart subtotal reaches each level you
+                      configure below.
+                    </p>
+                    <p className={styles.statusCardMeta}>
+                      Shopify discount: <strong>Cart tier rewards</strong>{" "}
+                      (Admin → Discounts). Saving settings updates this discount.
+                    </p>
+                  </>
+                ) : (
                   <p className={styles.statusCardBody}>
-                    Tier discounts are applied automatically at checkout when a
-                    customer&apos;s cart subtotal reaches each level you
-                    configure below.
+                    Save your settings once to activate checkout discounts. After
+                    that, each save updates your tiers for customers at checkout.
                   </p>
-                  <p className={styles.statusCardMeta}>
-                    Shopify discount: <strong>Cart tier rewards</strong>{" "}
-                    (Admin → Discounts). Saving settings updates this discount.
-                  </p>
-                </>
-              ) : (
-                <p className={styles.statusCardBody}>
-                  Save your settings once to activate checkout discounts. After
-                  that, each save updates your tiers for customers at checkout.
+                )}
+              </div>
+
+              <div className={styles.statusCard}>
+                <div className={styles.statusCardHeader}>
+                  <h3 className={styles.statusCardTitle}>Storefront setup</h3>
+                </div>
+                <p className={styles.statusCardBody} style={{ marginBottom: "12px" }}>
+                  To show the rewards progress bar on your storefront, enable it in your theme editor.
                 </p>
-              )}
-            </div>
+                <ul className={styles.errorList} style={{ color: "#4a5565", marginBottom: "16px" }}>
+                  <li><strong>Option 1 (App Embed):</strong> Enable the "Cart rewards embed" in Theme Settings &rarr; App embeds. It automatically displays on the cart page.</li>
+                  <li><strong>Option 2 (App Block):</strong> Add the "Tier rewards progress" block directly to your Cart template sections.</li>
+                </ul>
+                <a
+                  href="shopify:admin/themes/current/editor?context=apps"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.buttonSecondary}
+                  style={{ textDecoration: "none", display: "inline-block" }}
+                >
+                  Open theme editor
+                </a>
+              </div>
+            </>
           )}
 
           {errors.length > 0 && (
@@ -241,6 +271,63 @@ export default function TierSettingsPage() {
                 onChange={(e) => setHomepageSubtitle(e.target.value)}
                 placeholder={DEFAULT_TIER_REWARDS_CONFIG.homepageSubtitle}
               />
+            </div>
+          </section>
+
+          <section className={`${styles.section} ${styles.sectionSpaced}`}>
+            <h3 className={styles.sectionTitle}>Design (Storefront)</h3>
+            <p className={styles.hint}>
+              Customize the colors of the progress bar to match your brand.
+            </p>
+            <div className={styles.fieldRow}>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="primaryColor">
+                  Primary color
+                </label>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="color"
+                    id="primaryColor"
+                    name="primaryColor"
+                    value={primaryColor}
+                    onChange={(e) => setPrimaryColor(e.target.value)}
+                    style={{ width: '40px', height: '40px', padding: 0, border: 'none', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontFamily: 'monospace' }}>{primaryColor}</span>
+                </div>
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="secondaryColor">
+                  Secondary color
+                </label>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="color"
+                    id="secondaryColor"
+                    name="secondaryColor"
+                    value={secondaryColor}
+                    onChange={(e) => setSecondaryColor(e.target.value)}
+                    style={{ width: '40px', height: '40px', padding: 0, border: 'none', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontFamily: 'monospace' }}>{secondaryColor}</span>
+                </div>
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="backgroundColor">
+                  Background color
+                </label>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="color"
+                    id="backgroundColor"
+                    name="backgroundColor"
+                    value={backgroundColor}
+                    onChange={(e) => setBackgroundColor(e.target.value)}
+                    style={{ width: '40px', height: '40px', padding: 0, border: 'none', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontFamily: 'monospace' }}>{backgroundColor}</span>
+                </div>
+              </div>
             </div>
           </section>
 

@@ -10,6 +10,9 @@ export type TierRewardsConfig = {
   enabled: boolean;
   programTitle: string;
   homepageSubtitle: string;
+  primaryColor: string;
+  secondaryColor: string;
+  backgroundColor: string;
   tiers: RewardTier[];
 };
 
@@ -24,6 +27,9 @@ export const DEFAULT_TIER_REWARDS_CONFIG: TierRewardsConfig = {
   programTitle: "Instant Rewards",
   homepageSubtitle:
     "Spend more on this order to unlock bigger discounts",
+  primaryColor: "#bb4d00",
+  secondaryColor: "#e17100",
+  backgroundColor: "#fffaf3",
   tiers: [
     {
       minSpend: 300_100,

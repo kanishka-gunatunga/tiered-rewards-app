@@ -15,7 +15,7 @@ import {
   parseConfigFromFormData,
   saveTierRewardsConfig,
 } from "../lib/tier-rewards.server";
-import { authenticate } from "../shopify.server";
+import { authenticate, MONTHLY_PLAN } from "../shopify.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -24,7 +24,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     throw redirect("/app");
   }
 
-  const { admin } = await authenticate.admin(request);
+  const { admin, billing } = await authenticate.admin(request);
+
+  // Require active billing. If none exists, this will redirect to the plan selection page.
+  await billing.require({
+    plans: [MONTHLY_PLAN],
+    isTest: true, // Remove or set to false in production
+    onFailure: async () => billing.request({ plan: MONTHLY_PLAN, isTest: true }),
+  });
 
   let tierData = {
     config: { ...DEFAULT_TIER_REWARDS_CONFIG },
@@ -38,10 +45,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     let checkoutDiscountActive = false;
     try {
       checkoutDiscountActive = await hasTierCartDiscount(admin);
-      if (config.enabled) {
-        await syncTierRewardsDiscount(admin, config);
-        checkoutDiscountActive = true;
-      }
     } catch (discountCheckError) {
       console.error("[app] discount status check failed:", discountCheckError);
     }
@@ -67,7 +70,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
+  const { admin, billing } = await authenticate.admin(request);
+  
+  await billing.require({
+    plans: [MONTHLY_PLAN],
+    isTest: true, // Remove or set to false in production
+    onFailure: async () => billing.request({ plan: MONTHLY_PLAN, isTest: true }),
+  });
+
   const formData = await request.formData();
   const config = parseConfigFromFormData(formData);
   const result = await saveTierRewardsConfig(admin, config);
