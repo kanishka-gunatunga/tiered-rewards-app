@@ -1,0 +1,1241 @@
+{%- comment -%}
+  Cart tier rewards progress bar UI (shared by section block and cart embed).
+{%- endcomment -%}
+{%- liquid
+  assign tr_primary = primary_color | append: ''
+  assign tr_secondary = secondary_color | append: ''
+  assign tr_bg = background_color | append: ''
+-%}
+  <div
+    class="tier-rewards-block-v2"
+    style="--tr-primary: {{ tr_primary }}; --tr-secondary: {{ tr_secondary }}; --tr-bg: {{ tr_bg }}; margin-top: {{ margin_top }}px; margin-bottom: {{ margin_bottom }}px;"
+    data-tier-rewards
+    data-tier-block-id="{{ block_id }}"
+    data-tier-default-subtotal="{{ cart_subtotal_cents }}"
+    data-tr-primary="{{ tr_primary }}"
+    data-tr-secondary="{{ tr_secondary }}"
+    data-tr-bg="{{ tr_bg }}"
+    {{ shopify_attributes }}
+  >
+    <div class="tr-header">
+      <div class="tr-left">
+        <h3 class="tr-title">{{ heading }}</h3>
+        <p class="tr-cart-text" data-tier-cart-text>Current cart: {{ cart.total_price | money }}</p>
+      </div>
+      <div class="tr-center">
+        <p class="tr-earned-line">
+          You have earned <strong data-tier-earned-value>{{ 0 | money }}</strong>!
+        </p>
+      </div>
+      <div class="tr-right">
+        <span class="tr-earned-pill" data-tier-earned-pill>
+          <span class="tr-pill-icon" aria-hidden="true">
+            <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g clip-path="url(#clip0_2400_9318)">
+              <path d="M8.43611 13.1584C8.36031 12.8646 8.20718 12.5965 7.99263 12.3819C7.77808 12.1674 7.50995 12.0143 7.21615 11.9385L2.00779 10.5954C1.91893 10.5702 1.84073 10.5167 1.78504 10.443C1.72935 10.3693 1.69922 10.2794 1.69922 10.1871C1.69922 10.0947 1.72935 10.0048 1.78504 9.93115C1.84073 9.85745 1.91893 9.80393 2.00779 9.77871L7.21615 8.43481C7.50985 8.35909 7.7779 8.20608 7.99244 7.99169C8.20698 7.7773 8.36018 7.50935 8.43611 7.21571L9.77916 2.00735C9.80412 1.91814 9.85759 1.83954 9.93139 1.78356C10.0052 1.72757 10.0953 1.69727 10.1879 1.69727C10.2806 1.69727 10.3707 1.72757 10.4445 1.78356C10.5183 1.83954 10.5717 1.91814 10.5967 2.00735L11.9389 7.21571C12.0147 7.50951 12.1678 7.77763 12.3824 7.99218C12.5969 8.20673 12.8651 8.35987 13.1589 8.43566L18.3672 9.77786C18.4568 9.80257 18.5358 9.85597 18.5921 9.92989C18.6483 10.0038 18.6788 10.0942 18.6788 10.1871C18.6788 10.28 18.6483 10.3703 18.5921 10.4442C18.5358 10.5181 18.4568 10.5716 18.3672 10.5963L13.1589 11.9385C12.8651 12.0143 12.5969 12.1674 12.3824 12.3819C12.1678 12.5965 12.0147 12.8646 11.9389 13.1584L10.5959 18.3668C10.5709 18.456 10.5174 18.5346 10.4436 18.5906C10.3698 18.6466 10.2797 18.6769 10.1871 18.6769C10.0944 18.6769 10.0044 18.6466 9.93055 18.5906C9.85674 18.5346 9.80328 18.456 9.77831 18.3668L8.43611 13.1584Z" stroke="white" stroke-width="1.69792" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M16.9766 2.54688V5.94271" stroke="white" stroke-width="1.69792" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M18.6771 4.24414H15.2812" stroke="white" stroke-width="1.69792" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3.39844 14.4316V16.1296" stroke="white" stroke-width="1.69792" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M4.24479 15.2812H2.54688" stroke="white" stroke-width="1.69792" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+              <defs>
+              <clipPath id="clip0_2400_9318">
+              <rect width="20.375" height="20.375" fill="white"/>
+              </clipPath>
+              </defs>
+            </svg>
+          </span>
+          <span class="tr-earned-pill-text" data-tier-earned-pill-text>{{ 0 | money }} OFF</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="tr-milestones">
+      <div class="tr-milestone tr-milestone-left">
+        <span class="tr-milestone-icon" aria-hidden="true">
+          <span class="tr-milestone-badge tr-milestone-badge--current"></span>
+        </span>
+        <div class="tr-milestone-money" data-tier-left-spend></div>
+        <div class="tr-milestone-off tr-milestone-off-green" data-tier-left-discount></div>
+      </div>
+      <div class="tr-milestone tr-milestone-right">
+        <span class="tr-milestone-icon" aria-hidden="true">
+          <span class="tr-milestone-badge tr-milestone-badge--next">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M22 7L13.5 15.5L8.5 10.5L2 17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M16 7H22V13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </span>
+        <div class="tr-milestone-money" data-tier-right-spend></div>
+        <div class="tr-milestone-off tr-milestone-off-orange" data-tier-right-discount></div>
+      </div>
+    </div>
+
+    <div class="tr-track" data-tier-track>
+      <div class="tr-track-fill" data-tier-progress aria-hidden="true"></div>
+    </div>
+
+    <p class="tr-cta" data-tier-cta></p>
+
+    <p class="tr-next-up">
+      <span class="tr-next-muted">Next up:</span>
+      <span class="tr-next-strong" data-tier-next-spend></span>
+      <span class="tr-next-muted">→</span>
+      <span class="tr-next-accent" data-tier-next-discount></span>
+    </p>
+
+    <div class="tr-celebration-overlay" data-tier-celebration-overlay hidden aria-hidden="true">
+      <div class="tr-celebration-confetti-host" data-tier-confetti-host aria-hidden="true"></div>
+      <div class="tr-celebration-banner" role="status">
+        <span class="tr-celebration-banner-icon" aria-hidden="true">🎉</span>
+        <div class="tr-celebration-banner-copy">
+          <strong>Reward unlocked!</strong>
+          <p data-tier-celebration-message>You just earned a new discount!</p>
+        </div>
+        <button type="button" class="tr-celebration-banner-close" data-tier-celebration-close aria-label="Dismiss celebration">×</button>
+      </div>
+    </div>
+
+
+  <script>
+    (() => {
+      const CONFETTI_EMOJIS = ["🎉", "✨", "🎊", "⭐", "🥳", "💫"];
+
+      if (!window.__tierRewardsDismissCelebration) {
+        window.__tierRewardsDismissCelebration = () => {
+          window.clearTimeout(window.__tierRewardsCelebrateTimer);
+          document.getElementById("tier-rewards-page-toast")?.remove();
+          document.querySelectorAll("[data-tier-rewards-toast]").forEach((el) => el.remove());
+          document.getElementById("tier-rewards-global-confetti")?.remove();
+          document.querySelectorAll("[data-tier-celebration-overlay]").forEach((overlay) => {
+            overlay.classList.remove("is-visible");
+            overlay.hidden = true;
+            overlay.setAttribute("aria-hidden", "true");
+            overlay.style.display = "none";
+            overlay.style.opacity = "0";
+            const host = overlay.querySelector("[data-tier-confetti-host]");
+            if (host) host.textContent = "";
+            const banner = overlay.querySelector(".tr-celebration-banner");
+            if (banner) banner.style.display = "";
+          });
+        };
+      }
+
+      if (!window.__tierRewardsCelebrate) {
+        const injectCelebrationStyles = () => {
+          if (document.getElementById("tier-rewards-celebration-styles")) return;
+          const style = document.createElement("style");
+          style.id = "tier-rewards-celebration-styles";
+          style.textContent = `
+            @keyframes tier-rewards-confetti-fall {
+              0% { opacity: 0; transform: translate3d(0, -10vh, 0) rotate(0deg); }
+              12% { opacity: 1; }
+              100% { opacity: 0; transform: translate3d(calc(-40px + 80px * var(--tr-drift, 0.5)), 110vh, 0) rotate(720deg); }
+            }
+            .tier-rewards-confetti-piece {
+              position: absolute; top: -6%; line-height: 1; pointer-events: none;
+              animation: tier-rewards-confetti-fall linear forwards;
+            }
+          `;
+          document.head.appendChild(style);
+        };
+
+        window.__tierRewardsCelebrate = (tier, currencyCode) => {
+          if (!tier || !document.body) return;
+          if (window.__tierRewardsCelebrateBusy) return;
+
+          window.__tierRewardsCelebrateBusy = true;
+          window.__tierRewardsDismissCelebration();
+          injectCelebrationStyles();
+
+          const discount = (Number(tier.discountAmount || 0) / 100).toLocaleString(undefined, {
+            style: "currency",
+            currency: currencyCode || "USD",
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          });
+
+          const layer = document.createElement("div");
+          layer.id = "tier-rewards-global-confetti";
+          layer.style.cssText =
+            "position:fixed;inset:0;z-index:2147483646;pointer-events:none;overflow:hidden;";
+          for (let i = 0; i < 40; i += 1) {
+            const piece = document.createElement("span");
+            piece.className = "tier-rewards-confetti-piece";
+            piece.textContent = CONFETTI_EMOJIS[i % CONFETTI_EMOJIS.length];
+            piece.style.left = `${Math.random() * 100}%`;
+            piece.style.setProperty("--tr-drift", String(Math.random()));
+            piece.style.animationDuration = `${2 + Math.random() * 2}s`;
+            piece.style.animationDelay = `${Math.random() * 0.9}s`;
+            piece.style.fontSize = `${22 + Math.random() * 18}px`;
+            layer.appendChild(piece);
+          }
+          document.body.appendChild(layer);
+
+          let toast = document.getElementById("tier-rewards-page-toast");
+          if (!toast) {
+            toast = document.createElement("div");
+            toast.id = "tier-rewards-page-toast";
+            toast.setAttribute("data-tier-rewards-toast", "");
+            toast.setAttribute("role", "status");
+            document.body.appendChild(toast);
+          }
+          toast.setAttribute("aria-live", "polite");
+          toast.innerHTML = `<span style="font-size:36px">🎉</span><span><strong style="display:block;font-size:18px;color:#101828">Reward unlocked!</strong><span style="font-size:15px;color:#4a5565">You just earned ${discount} off on this order!</span></span>`;
+          toast.style.cssText =
+            "position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:2147483647;display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:14px;border:2px solid #e8a86b;background:var(--tr-bg, #fffaf3);box-shadow:0 20px 40px rgba(187,77,0,.4);";
+
+          document.querySelectorAll("[data-tier-celebration-overlay]").forEach((overlay) => {
+            const banner = overlay.querySelector(".tr-celebration-banner");
+            if (banner) banner.style.display = "none";
+
+            const host = overlay.querySelector("[data-tier-confetti-host]");
+            if (host) {
+              host.textContent = "";
+              for (let i = 0; i < 18; i += 1) {
+                const piece = document.createElement("span");
+                piece.className = "tier-rewards-confetti-piece";
+                piece.textContent = CONFETTI_EMOJIS[i % CONFETTI_EMOJIS.length];
+                piece.style.left = `${4 + Math.random() * 92}%`;
+                piece.style.setProperty("--tr-drift", String(Math.random()));
+                piece.style.animationDuration = `${2.2 + Math.random() * 1.8}s`;
+                piece.style.animationDelay = `${Math.random() * 0.7}s`;
+                piece.style.fontSize = `${18 + Math.random() * 14}px`;
+                host.appendChild(piece);
+              }
+            }
+
+            overlay.removeAttribute("hidden");
+            overlay.hidden = false;
+            overlay.setAttribute("aria-hidden", "true");
+            overlay.style.display = "block";
+            overlay.style.background = "transparent";
+            overlay.style.backdropFilter = "none";
+            overlay.style.pointerEvents = "none";
+            overlay.style.opacity = "1";
+            overlay.classList.add("is-visible");
+          });
+
+          window.__tierRewardsCelebrateTimer = window.setTimeout(() => {
+            window.__tierRewardsDismissCelebration();
+            window.__tierRewardsCelebrateBusy = false;
+          }, 5000);
+        };
+      }
+
+      window.__tierRewardsFrozenEarned = {};
+
+      if (!window.__tierRewardsNetworkHooked) {
+        window.__tierRewardsNetworkHooked = true;
+        const isCartUrl = (url) =>
+          url &&
+          (/\/cart(\/(add|change|update|clear)(\.js)?|\.js)(\?|$)/i.test(String(url)) ||
+            /\/cart\?/i.test(String(url)));
+
+        const readSubtotal = (data) => {
+          if (!data || typeof data !== "object") return null;
+          const n = Number(data.items_subtotal_price ?? data.total_price);
+          return Number.isFinite(n) ? n : null;
+        };
+
+        const snapshotAll = () => {
+          document.querySelectorAll("[data-tier-rewards]").forEach((el) => {
+            const key = el.dataset.tierBlockId;
+            if (!key) return;
+            const earned = Number(el.dataset.trEarnedCents || 0);
+            window.__tierRewardsFrozenEarned[key] = earned;
+          });
+        };
+
+        const queueRefresh = (delay = 400) => {
+          window.clearTimeout(window.__tierRewardsRefreshTimer);
+          window.__tierRewardsRefreshTimer = window.setTimeout(
+            () => document.dispatchEvent(new CustomEvent("tier-rewards:refresh")),
+            delay,
+          );
+        };
+
+        const isCartControl = (target) =>
+          target instanceof HTMLElement &&
+          Boolean(
+            target.closest(
+              '[name="plus"], [name="minus"], .quantity__button, .cart-remove-button, .cart__remove, a[href*="/cart/change"], a[href="/cart/clear"], form[action*="/cart"], cart-items, .cart-items, .cart__items',
+            ),
+          );
+
+        if (!window.__tierRewardsDomListeners) {
+          window.__tierRewardsDomListeners = true;
+          ["cart:updated", "cart:refresh", "theme:cart:change", "theme:cart:update"].forEach((name) => {
+            document.addEventListener(name, () => {
+              snapshotAll();
+              queueRefresh();
+            });
+          });
+          document.addEventListener(
+            "pointerdown",
+            (event) => {
+              if (isCartControl(event.target)) snapshotAll();
+            },
+            true,
+          );
+          document.addEventListener("change", (event) => {
+            if (isCartControl(event.target)) {
+              snapshotAll();
+              queueRefresh();
+            }
+          });
+          document.addEventListener("click", (event) => {
+            if (isCartControl(event.target)) {
+              snapshotAll();
+              queueRefresh();
+            }
+          });
+          document.addEventListener("shopify:section:load", queueRefresh);
+        }
+
+        const originalFetch = window.fetch.bind(window);
+        window.fetch = async (...args) => {
+          const url = typeof args[0] === "string" ? args[0] : args[0]?.url;
+          if (isCartUrl(url)) snapshotAll();
+          const response = await originalFetch(...args);
+          if (isCartUrl(url)) queueRefresh();
+          return response;
+        };
+
+        const originalSend = XMLHttpRequest.prototype.send;
+        XMLHttpRequest.prototype.send = function (...sendArgs) {
+          if (isCartUrl(this.__tierRewardsUrl)) {
+            snapshotAll();
+            this.addEventListener("loadend", queueRefresh, { once: true });
+          }
+          return originalSend.apply(this, sendArgs);
+        };
+
+        const originalOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function (method, url, ...rest) {
+          this.__tierRewardsUrl = String(url);
+          return originalOpen.call(this, method, url, ...rest);
+        };
+      }
+
+      const blockId = {{ block_id | json }};
+      let scope = document.currentScript?.closest("[data-tier-rewards]");
+      if (!scope) {
+        scope = document.querySelector(`[data-tier-rewards][data-tier-block-id="${blockId}"]`);
+      }
+      if (!scope) return;
+
+      const blockKey = scope.dataset.tierBlockId || String(blockId);
+      window.__tierRewardsActiveBlockId = blockKey;
+
+      const applyThemeColors = (root) => {
+        if (!root) return;
+        const primary = root.dataset.trPrimary;
+        const secondary = root.dataset.trSecondary;
+        const bg = root.dataset.trBg;
+        if (primary) root.style.setProperty("--tr-primary", primary);
+        if (secondary) root.style.setProperty("--tr-secondary", secondary);
+        if (bg) root.style.setProperty("--tr-bg", bg);
+      };
+
+      applyThemeColors(scope);
+
+      const rawTiers = {{ tiers_json | json }};
+      const currencyCode = {{ cart.currency.iso_code | json }};
+      const defaultSubtotal = Number(scope.dataset.tierDefaultSubtotal || 0);
+
+      const parseTiers = (value) => {
+        let parsed = value;
+        if (typeof parsed === "string") {
+          try {
+            parsed = JSON.parse(parsed);
+          } catch {
+            return [];
+          }
+        }
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && Array.isArray(parsed.tiers)) {
+          parsed = parsed.tiers;
+        }
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+          .map((tier) => ({
+            minSpend: Number(tier?.minSpend || 0),
+            discountAmount: Number(tier?.discountAmount || 0),
+          }))
+          .filter((tier) => tier.minSpend > 0 && tier.discountAmount > 0)
+          .sort((a, b) => a.minSpend - b.minSpend);
+      };
+
+      const tiers = parseTiers(rawTiers);
+      if (!tiers.length) return;
+
+      const formatMoney = (cents, maxFractionDigits = 2) =>
+        (Number(cents || 0) / 100).toLocaleString(undefined, {
+          style: "currency",
+          currency: currencyCode,
+          minimumFractionDigits: 0,
+          maximumFractionDigits: maxFractionDigits,
+        });
+
+      const els = {
+        cartText: scope.querySelector("[data-tier-cart-text]"),
+        earnedValue: scope.querySelector("[data-tier-earned-value]"),
+        earnedPillText: scope.querySelector("[data-tier-earned-pill-text]"),
+        leftSpend: scope.querySelector("[data-tier-left-spend]"),
+        leftDiscount: scope.querySelector("[data-tier-left-discount]"),
+        rightSpend: scope.querySelector("[data-tier-right-spend]"),
+        rightDiscount: scope.querySelector("[data-tier-right-discount]"),
+        track: scope.querySelector("[data-tier-track]"),
+        progress: scope.querySelector("[data-tier-progress]"),
+        cta: scope.querySelector("[data-tier-cta]"),
+        nextSpend: scope.querySelector("[data-tier-next-spend]"),
+        nextDiscount: scope.querySelector("[data-tier-next-discount]"),
+        celebrationOverlay: scope.querySelector("[data-tier-celebration-overlay]"),
+        confettiHost: scope.querySelector("[data-tier-confetti-host]"),
+        celebrationMessage: scope.querySelector("[data-tier-celebration-message]"),
+        celebrationClose: scope.querySelector("[data-tier-celebration-close]"),
+      };
+
+      const getLiveScope = () =>
+        scope.isConnected
+          ? scope
+          : document.querySelector(`[data-tier-rewards][data-tier-block-id="${blockKey}"]`);
+
+      const getLiveEls = () => {
+        const live = getLiveScope();
+        if (!live) return els;
+        return {
+          celebrationOverlay: live.querySelector("[data-tier-celebration-overlay]"),
+          confettiHost: live.querySelector("[data-tier-confetti-host]"),
+          celebrationMessage: live.querySelector("[data-tier-celebration-message]"),
+        };
+      };
+
+      if (!window.__tierRewardsCloseListener) {
+        window.__tierRewardsCloseListener = true;
+        document.addEventListener("click", (event) => {
+          const target = event.target;
+          if (!(target instanceof HTMLElement)) return;
+          if (!target.closest("[data-tier-celebration-close]")) return;
+          window.__tierRewardsDismissCelebration?.();
+          window.__tierRewardsCelebrateBusy = false;
+        });
+      }
+
+      const maybeCelebrateTierUnlock = (state) => {
+        const earned = Number(state.currentTier?.discountAmount || 0);
+        const live = getLiveScope() || scope;
+        if (!live) return;
+
+        let previousEarned = window.__tierRewardsFrozenEarned[blockKey];
+        const usedFrozen = previousEarned !== undefined;
+
+        if (usedFrozen) {
+          delete window.__tierRewardsFrozenEarned[blockKey];
+        } else {
+          previousEarned = Number(live.dataset.trEarnedCents ?? NaN);
+          if (Number.isNaN(previousEarned)) {
+            live.dataset.trEarnedCents = String(earned);
+            return;
+          }
+        }
+
+        if (earned > previousEarned && state.currentTier && !window.__tierRewardsCelebrateBusy) {
+          window.__tierRewardsCelebrate(state.currentTier, currencyCode);
+        }
+
+        live.dataset.trEarnedCents = String(earned);
+      };
+
+      const tierAt = (index) => tiers[Math.max(0, Math.min(index, tiers.length - 1))];
+
+      const computeState = (subtotalCents) => {
+        let currentIndex = -1;
+        for (let i = 0; i < tiers.length; i += 1) {
+          if (subtotalCents >= tiers[i].minSpend) currentIndex = i;
+        }
+
+        const maxIndex = tiers.length - 1;
+        let leftIndex;
+        let rightIndex;
+
+        if (currentIndex < 0) {
+          leftIndex = 0;
+          rightIndex = Math.min(1, maxIndex);
+        } else if (currentIndex >= maxIndex) {
+          leftIndex = maxIndex;
+          rightIndex = maxIndex;
+        } else if (currentIndex === maxIndex - 1) {
+          leftIndex = currentIndex;
+          rightIndex = maxIndex;
+        } else {
+          leftIndex = currentIndex + 1;
+          rightIndex = Math.min(currentIndex + 2, maxIndex);
+        }
+
+        const leftTier = tierAt(leftIndex);
+        const rightTier = tierAt(rightIndex);
+        const currentTier = currentIndex >= 0 ? tierAt(currentIndex) : null;
+        const nextTier = currentIndex < maxIndex ? tierAt(currentIndex + 1) : null;
+
+        let progressPercent = 0;
+
+        if (currentIndex >= maxIndex) {
+          progressPercent = 100;
+        } else if (currentIndex < 0) {
+          const firstSpend = tiers[0].minSpend;
+          if (firstSpend > 0) {
+            progressPercent = (subtotalCents / firstSpend) * 100;
+          }
+        } else {
+          const progressStart = tiers[currentIndex].minSpend;
+          const progressTarget = tiers[currentIndex + 1].minSpend;
+          const labelEnd = Number(rightTier.minSpend || progressTarget);
+          const spanEnd = Math.max(progressTarget, labelEnd);
+          if (spanEnd > progressStart) {
+            progressPercent = ((subtotalCents - progressStart) / (spanEnd - progressStart)) * 100;
+          }
+        }
+
+        progressPercent = Math.max(0, Math.min(100, progressPercent));
+
+        return {
+          currentIndex,
+          currentTier,
+          nextTier,
+          leftTier,
+          rightTier,
+          progressPercent,
+          remainingCents: nextTier ? Math.max(0, nextTier.minSpend - subtotalCents) : 0,
+          subtotalCents,
+        };
+      };
+
+      const setProgress = (progressPercent) => {
+        const clamped = Math.max(0, Math.min(100, Number(progressPercent) || 0));
+        const live = getLiveScope() || scope;
+        const width = `${clamped.toFixed(2)}%`;
+        const progressEl = live.querySelector("[data-tier-progress]");
+        const trackEl = live.querySelector("[data-tier-track]");
+        if (progressEl) {
+          progressEl.style.transformOrigin = "left center";
+          progressEl.style.transform = `scaleX(${clamped / 100})`;
+        }
+        if (trackEl) {
+          trackEl.style.setProperty("--tr-progress", width);
+          trackEl.dataset.progress = clamped.toFixed(2);
+        }
+      };
+
+      const getRenderEls = () => {
+        const live = getLiveScope();
+        if (!live) return els;
+        return {
+          cartText: live.querySelector("[data-tier-cart-text]"),
+          earnedValue: live.querySelector("[data-tier-earned-value]"),
+          earnedPillText: live.querySelector("[data-tier-earned-pill-text]"),
+          leftSpend: live.querySelector("[data-tier-left-spend]"),
+          leftDiscount: live.querySelector("[data-tier-left-discount]"),
+          rightSpend: live.querySelector("[data-tier-right-spend]"),
+          rightDiscount: live.querySelector("[data-tier-right-discount]"),
+          cta: live.querySelector("[data-tier-cta]"),
+          nextSpend: live.querySelector("[data-tier-next-spend]"),
+          nextDiscount: live.querySelector("[data-tier-next-discount]"),
+        };
+      };
+
+      const render = (subtotalCents) => {
+        const live = getLiveScope();
+        if (!live) return;
+        applyThemeColors(live);
+        const ui = getRenderEls();
+        const state = computeState(subtotalCents);
+        const currentDiscount = Number(state.currentTier?.discountAmount || 0);
+        const nextDiscount = Number(state.nextTier?.discountAmount || 0);
+
+        if (ui.cartText) {
+          ui.cartText.textContent = `Current cart: ${formatMoney(state.subtotalCents, 2)}`;
+        }
+        if (ui.earnedValue) ui.earnedValue.textContent = formatMoney(currentDiscount, 2);
+        if (ui.earnedPillText) ui.earnedPillText.textContent = `${formatMoney(currentDiscount, 2)} OFF`;
+
+        if (ui.leftSpend) ui.leftSpend.textContent = formatMoney(state.leftTier.minSpend, 2);
+        if (ui.leftDiscount) ui.leftDiscount.textContent = `${formatMoney(state.leftTier.discountAmount, 2)} OFF`;
+        if (ui.rightSpend) ui.rightSpend.textContent = formatMoney(state.rightTier.minSpend, 2);
+        if (ui.rightDiscount) ui.rightDiscount.textContent = `${formatMoney(state.rightTier.discountAmount, 2)} OFF`;
+
+        setProgress(state.progressPercent);
+
+        if (ui.cta) {
+          if (state.nextTier) {
+            const amountRemaining = formatMoney(state.remainingCents, 1);
+            const discountPhrase = `${formatMoney(nextDiscount, 0)} discount!`;
+            const escapeHtml = (text) =>
+              text.replace(/[&<>]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]));
+            ui.cta.innerHTML = `Add ${escapeHtml(amountRemaining)} more to unlock <span class="tr-cta-accent">${escapeHtml(discountPhrase)}</span>`;
+          } else {
+            ui.cta.textContent = `Great! You unlocked the highest reward: ${formatMoney(currentDiscount, 0)}.`;
+          }
+        }
+
+        if (ui.nextSpend && ui.nextDiscount) {
+          const refTier = state.nextTier || state.rightTier;
+          ui.nextSpend.textContent = formatMoney(refTier.minSpend, 2);
+          ui.nextDiscount.textContent = `${formatMoney(refTier.discountAmount, 2)} OFF`;
+        }
+
+        maybeCelebrateTierUnlock(state);
+      };
+
+      let lastKnownSubtotal = defaultSubtotal;
+
+      const readCartSubtotal = (cartData) => {
+        const subtotal = Number(
+          cartData?.items_subtotal_price ?? cartData?.total_price ?? lastKnownSubtotal,
+        );
+        return Number.isFinite(subtotal) ? subtotal : lastKnownSubtotal;
+      };
+
+      const fetchSubtotal = async () => {
+        try {
+          const response = await fetch("/cart.js", {
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: { Accept: "application/json" },
+          });
+          if (!response.ok) return lastKnownSubtotal;
+          const cartData = await response.json();
+          lastKnownSubtotal = readCartSubtotal(cartData);
+          const live = getLiveScope();
+          if (live) live.dataset.tierDefaultSubtotal = String(lastKnownSubtotal);
+          return lastKnownSubtotal;
+        } catch {
+          return lastKnownSubtotal;
+        }
+      };
+
+      let refreshGeneration = 0;
+
+      const refresh = async () => {
+        const token = ++refreshGeneration;
+        const subtotal = await fetchSubtotal();
+        if (token !== refreshGeneration) return;
+        const activeScope = getLiveScope();
+        if (!activeScope) return;
+        render(subtotal);
+      };
+
+      const bootstrap = async () => {
+        const subtotal = await fetchSubtotal();
+        const state = computeState(subtotal);
+        const live = getLiveScope() || scope;
+        const earned = String(state.currentTier?.discountAmount || 0);
+        const pendingUnlock = Object.prototype.hasOwnProperty.call(
+          window.__tierRewardsFrozenEarned,
+          blockKey,
+        );
+
+        if (!pendingUnlock) {
+          live.dataset.trEarnedCents = earned;
+        }
+
+        window.__tierRewardsCelebrateBusy = false;
+        scope.dataset.trCelebrateReady = "1";
+        render(subtotal);
+      };
+
+      render(defaultSubtotal);
+      bootstrap();
+
+      window.__tierRewardsRefreshHandlers = window.__tierRewardsRefreshHandlers || {};
+      window.__tierRewardsRefreshHandlers[blockKey] = refresh;
+
+      if (!window.__tierRewardsRefreshListener) {
+        window.__tierRewardsRefreshListener = true;
+        document.addEventListener("tier-rewards:refresh", () => {
+          const handlers = window.__tierRewardsRefreshHandlers || {};
+          Object.values(handlers).forEach((handler) => {
+            try {
+              handler();
+            } catch {
+              /* ignore */
+            }
+          });
+        });
+      }
+
+      if (!window.__tierRewardsPollTimer) {
+        window.__tierRewardsPollTimer = window.setInterval(() => {
+          document.dispatchEvent(new CustomEvent("tier-rewards:refresh"));
+        }, 2500);
+      }
+
+      window.addEventListener("beforeunload", () => {
+        delete window.__tierRewardsRefreshHandlers?.[blockKey];
+      });
+    })();
+  </script>
+  </div>
+
+  <style id="tier-rewards-styles-{{ block_id }}">
+    .tier-rewards-block-v2 {
+      position: relative;
+      border: 1px solid #ece8e2;
+      border-radius: 16px;
+      padding: 20px 20px 16px;
+      background: radial-gradient(53.47% 141.11% at 50% 50%, rgba(10, 10, 10, 0.02) 0.11%, rgba(0, 0, 0, 0) 100%),
+        #ffffff;
+      overflow: hidden;
+    }
+    .tier-rewards-block-v2 .tr-celebration-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 14px 12px;
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(3px);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 280ms ease;
+    }
+    .tier-rewards-block-v2 .tr-celebration-overlay.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .tier-rewards-block-v2 .tr-celebration-overlay[hidden] {
+      display: none !important;
+    }
+    .tier-rewards-block-v2 .tr-celebration-confetti-host {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .tier-rewards-block-v2 .tr-celebration-banner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: min(100%, 400px);
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid #f3e8d8;
+      background: linear-gradient(135deg, var(--tr-bg, #fffaf3) 0%, #ffffff 55%, #fff7ed 100%);
+      box-shadow:
+        0 16px 36px -12px rgba(187, 77, 0, 0.28),
+        0 6px 16px -8px rgba(16, 24, 40, 0.16);
+      transform: translateY(-8px) scale(0.98);
+      transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .tier-rewards-block-v2 .tr-celebration-overlay.is-visible .tr-celebration-banner {
+      transform: translateY(0) scale(1);
+    }
+    .tier-rewards-block-v2 .tr-celebration-banner-icon {
+      flex-shrink: 0;
+      font-size: 32px;
+      line-height: 1;
+    }
+    .tier-rewards-block-v2 .tr-celebration-banner-copy strong {
+      display: block;
+      font-family: 'Plus Jakarta Sans', Inter, sans-serif;
+      font-weight: 700;
+      font-size: 17px;
+      line-height: 1.25;
+      color: #101828;
+    }
+    .tier-rewards-block-v2 .tr-celebration-banner-copy p {
+      margin: 4px 0 0;
+      font-family: Inter, sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #4a5565;
+    }
+    .tier-rewards-block-v2 .tr-celebration-banner-copy em {
+      font-style: normal;
+      font-weight: 700;
+      color: var(--tr-primary, #bb4d00);
+    }
+    .tier-rewards-block-v2 .tr-celebration-banner-close {
+      flex-shrink: 0;
+      width: 30px;
+      height: 30px;
+      border: 0;
+      border-radius: 9999px;
+      background: #f3f4f6;
+      color: #6a7282;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .tier-rewards-block-v2 .tr-confetti-piece {
+      position: absolute;
+      top: -8%;
+      line-height: 1;
+      user-select: none;
+      pointer-events: none;
+    }
+    .tier-rewards-block-v2 .tr-confetti-fall {
+      animation: tr-confetti-fall 3s linear forwards;
+    }
+    .tier-rewards-block-v2 .tr-confetti-rise {
+      animation: tr-confetti-rise 3s linear forwards;
+    }
+    .tier-rewards-block-v2 .tr-header {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: start;
+      margin-bottom: 6px;
+      min-height: 56px;
+    }
+    .tier-rewards-block-v2 .tr-left {
+      position: relative;
+      z-index: 2;
+      max-width: 42%;
+    }
+    .tier-rewards-block-v2 .tr-title {
+      margin: 0;
+      font-family: Inter, sans-serif;
+      font-weight: 700;
+      font-style: normal;
+      font-size: 23.29px;
+      line-height: 36.23px;
+      letter-spacing: 0;
+      color: #101828;
+    }
+    .tier-rewards-block-v2 .tr-cart-text {
+      margin: 3px 0 0;
+      font-family: Inter, sans-serif;
+      font-weight: 400;
+      font-style: normal;
+      font-size: 18.11px;
+      line-height: 25.88px;
+      letter-spacing: 0;
+      color: #4a5565;
+    }
+    .tier-rewards-block-v2 .tr-center {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      z-index: 1;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: calc(100% - 280px);
+      pointer-events: none;
+    }
+    .tier-rewards-block-v2 .tr-earned-line {
+      margin: 0;
+      width: auto;
+      max-width: 100%;
+      text-align: center;
+      font-family: 'Plus Jakarta Sans', Inter, sans-serif;
+      font-weight: 500;
+      font-style: normal;
+      font-size: 27px;
+      line-height: 100%;
+      letter-spacing: 0;
+      color: #000000;
+    }
+    .tier-rewards-block-v2 .tr-earned-line strong {
+      font-weight: 700;
+    }
+    .tier-rewards-block-v2 .tr-right {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: flex-end;
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .tier-rewards-block-v2 .tr-earned-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 9999px;
+      padding: 9px 14px;
+      background: linear-gradient(90deg, var(--tr-secondary, #e17100) 0%, #d08700 100%);
+      box-shadow: 0px 5px 8px -5px rgba(0, 0, 0, 0.1), 0px 13px 19px -4px rgba(0, 0, 0, 0.1);
+    }
+    .tier-rewards-block-v2 .tr-earned-pill-text {
+      font-family: Inter, sans-serif;
+      font-weight: 700;
+      font-style: normal;
+      font-size: 20.38px;
+      line-height: 30.56px;
+      letter-spacing: 0;
+      color: #ffffff;
+      white-space: nowrap;
+    }
+    .tier-rewards-block-v2 .tr-pill-icon {
+      display: inline-flex;
+      width: 17px;
+      height: 17px;
+      align-items: center;
+      justify-content: center;
+    }
+    .tier-rewards-block-v2 .tr-milestones {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 12px;
+      margin-bottom: 10px;
+      clear: both;
+    }
+    .tier-rewards-block-v2 .tr-milestone {
+      min-width: 94px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-left {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+    }
+    .tier-rewards-block-v2 .tr-milestone-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      text-align: right;
+    }
+    .tier-rewards-block-v2 .tr-milestone-left .tr-milestone-icon {
+      justify-content: flex-start;
+    }
+    .tier-rewards-block-v2 .tr-milestone-right .tr-milestone-icon {
+      justify-content: flex-end;
+    }
+    .tier-rewards-block-v2 .tr-milestone-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 2px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 42.31px;
+      height: 42.31px;
+      border-radius: 50%;
+      border: 5.29px solid #ffffff;
+      box-sizing: border-box;
+      background: linear-gradient(135deg, #fe9a00 0%, var(--tr-primary, #bb4d00) 100%);
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge--current {
+      box-shadow:
+        0px 5.29px 7.93px -5.29px rgba(0, 0, 0, 0.1),
+        0px 13.22px 19.83px -3.97px rgba(0, 0, 0, 0.1);
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge--current::after {
+      content: "";
+      display: block;
+      width: 14.6px;
+      height: 14.6px;
+      border-radius: 50%;
+      background: #ffffff;
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge--next {
+      width: 48px;
+      height: 48px;
+      border: 6px solid #ffffff;
+      padding: 0 6px;
+      background: linear-gradient(135deg, #d08700 0%, var(--tr-primary, #bb4d00) 100%);
+      box-shadow:
+        0px 6px 9px -6px rgba(0, 0, 0, 0.1),
+        0px 15px 22.5px -4.5px rgba(0, 0, 0, 0.1);
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge--next svg {
+      display: block;
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .tier-rewards-block-v2 .tr-milestone-money {
+      margin-top: 4px;
+      font-family: Inter, sans-serif;
+      font-weight: 600;
+      font-size: 15.87px;
+      line-height: 21.16px;
+      letter-spacing: 0;
+      color: #101828;
+    }
+    .tier-rewards-block-v2 .tr-milestone-off {
+      font-family: Inter, sans-serif;
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+    .tier-rewards-block-v2 .tr-milestone-off-green {
+      font-size: 15.87px;
+      line-height: 21.16px;
+      color: #2c8d2c;
+    }
+    .tier-rewards-block-v2 .tr-milestone-off-orange {
+      font-size: 18px;
+      line-height: 24px;
+      color: #a65f00;
+    }
+    .tier-rewards-block-v2 .tr-track {
+      position: relative;
+      display: block;
+      width: 100%;
+      height: 22px;
+      border-radius: 9999px;
+      background: #e5e7eb;
+      overflow: hidden;
+    }
+    .tier-rewards-block-v2 .tr-track-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: block;
+      height: 100%;
+      width: 100%;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, var(--tr-secondary, #e17100) 0%, #d08700 50%, var(--tr-primary, #bb4d00) 100%);
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: transform 260ms ease;
+      will-change: transform;
+      pointer-events: none;
+    }
+    .tier-rewards-block-v2 .tr-cta {
+      margin: 24px 0 20px;
+      text-align: center;
+      font-family: 'Plus Jakarta Sans', Inter, sans-serif;
+      font-weight: 600;
+      font-size: 26px;
+      line-height: 20px;
+      letter-spacing: 0;
+      color: #101828;
+    }
+    .tier-rewards-block-v2 .tr-cta-accent {
+      font-family: 'Plus Jakarta Sans', Inter, sans-serif;
+      font-weight: 700;
+      font-size: 26px;
+      line-height: 20px;
+      letter-spacing: 0;
+      color: var(--tr-primary, #bb4d00);
+    }
+    .tier-rewards-block-v2 .tr-next-up {
+      margin: 0;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .tier-rewards-block-v2 .tr-next-muted {
+      font-family: Inter, sans-serif;
+      font-weight: 400;
+      font-size: 14px;
+      line-height: 19px;
+      color: #6a7282;
+    }
+    .tier-rewards-block-v2 .tr-next-strong {
+      font-family: Inter, sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      line-height: 19px;
+      color: #364153;
+    }
+    .tier-rewards-block-v2 .tr-next-accent {
+      font-family: Inter, sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      line-height: 19px;
+      color: var(--tr-primary, #bb4d00);
+    }
+    .tr-celebration-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483000;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .tr-celebration-layer.is-active .tr-confetti-piece {
+      opacity: 1;
+    }
+    .tr-confetti-piece {
+      position: absolute;
+      top: -10%;
+      opacity: 0;
+      line-height: 1;
+      will-change: transform, opacity;
+      user-select: none;
+      pointer-events: none;
+    }
+    .tr-confetti-fall {
+      animation: tr-confetti-fall linear forwards;
+    }
+    .tr-confetti-rise {
+      animation: tr-confetti-rise linear forwards;
+    }
+    @keyframes tr-confetti-fall {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, -10vh, 0) rotate(0deg);
+      }
+      10% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(calc(-30px + 60px * var(--tr-drift, 0.5)), 110vh, 0) rotate(720deg);
+      }
+    }
+    @keyframes tr-confetti-rise {
+      0% {
+        opacity: 0;
+        transform: translate3d(0, 110vh, 0) rotate(0deg);
+      }
+      12% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(calc(-40px + 80px * var(--tr-drift, 0.5)), -20vh, 0) rotate(-540deg);
+      }
+    }
+    .tr-celebration-toast {
+      position: fixed;
+      left: 50%;
+      top: 24px;
+      z-index: 2147483001;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      width: min(92vw, 420px);
+      padding: 16px 18px;
+      border-radius: 16px;
+      border: 1px solid #f3e8d8;
+      background: linear-gradient(135deg, var(--tr-bg, #fffaf3) 0%, #ffffff 55%, #fff7ed 100%);
+      box-shadow:
+        0 18px 40px -12px rgba(187, 77, 0, 0.28),
+        0 8px 20px -10px rgba(16, 24, 40, 0.18);
+      pointer-events: auto;
+      opacity: 0;
+      transform: translate3d(-50%, -18px, 0) scale(0.96);
+      transition: opacity 280ms ease, transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .tr-celebration-toast.is-visible {
+      opacity: 1;
+      transform: translate3d(-50%, 0, 0) scale(1);
+    }
+    .tr-celebration-layer.is-leaving .tr-celebration-toast {
+      opacity: 0;
+      transform: translate3d(-50%, -12px, 0) scale(0.98);
+    }
+    .tr-celebration-toast-icon {
+      flex-shrink: 0;
+      font-size: 34px;
+      line-height: 1;
+    }
+    .tr-celebration-toast-copy {
+      flex: 1;
+      min-width: 0;
+    }
+    .tr-celebration-toast-copy strong {
+      display: block;
+      font-family: 'Plus Jakarta Sans', Inter, sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 1.25;
+      color: #101828;
+    }
+    .tr-celebration-toast-copy p {
+      margin: 4px 0 0;
+      font-family: Inter, sans-serif;
+      font-weight: 500;
+      font-size: 15px;
+      line-height: 1.4;
+      color: #4a5565;
+    }
+    .tr-celebration-toast-copy em {
+      font-style: normal;
+      font-weight: 700;
+      color: var(--tr-primary, #bb4d00);
+    }
+    .tr-celebration-toast-close {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border: 0;
+      border-radius: 9999px;
+      background: #f3f4f6;
+      color: #6a7282;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 160ms ease, color 160ms ease;
+    }
+    .tr-celebration-toast-close:hover {
+      background: #e5e7eb;
+      color: #364153;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tr-confetti-piece {
+        display: none;
+      }
+      .tr-celebration-toast {
+        transition: opacity 160ms ease;
+        transform: translate3d(-50%, 0, 0);
+      }
+      .tr-celebration-toast.is-visible {
+        transform: translate3d(-50%, 0, 0);
+      }
+    }
+    @media (max-width: 1199px) {
+      .tier-rewards-block-v2 .tr-cta,
+      .tier-rewards-block-v2 .tr-cta-accent {
+        font-size: 24px;
+        line-height: 20px;
+      }
+    }
+    @media (max-width: 899px) {
+      .tier-rewards-block-v2 {
+        padding: 16px 14px 14px;
+      }
+      .tier-rewards-block-v2 .tr-header {
+        grid-template-columns: 1fr;
+        min-height: 0;
+        gap: 10px;
+      }
+      .tier-rewards-block-v2 .tr-left {
+        max-width: none;
+      }
+      .tier-rewards-block-v2 .tr-right {
+        justify-content: flex-start;
+        grid-column: 1;
+      }
+      .tier-rewards-block-v2 .tr-center {
+        position: static;
+        left: auto;
+        transform: none;
+        width: 100%;
+        max-width: none;
+        pointer-events: auto;
+      }
+      .tier-rewards-block-v2 .tr-earned-line {
+        text-align: center;
+        font-size: 24px;
+      }
+      .tier-rewards-block-v2 .tr-track {
+        height: 18px;
+      }
+      .tier-rewards-block-v2 .tr-cta,
+      .tier-rewards-block-v2 .tr-cta-accent {
+        font-size: 22px;
+        line-height: 20px;
+      }
+    }
+  </style>
+

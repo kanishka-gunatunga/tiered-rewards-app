@@ -3,7 +3,7 @@
 client_id = "204f64bb421473fb6aacf675c3e1ab41"
 application_url = "https://rewards.aicloud24.com"
 embedded = true
-name = "Cart Tier Rewards Public"
+name = "CartQuest"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes

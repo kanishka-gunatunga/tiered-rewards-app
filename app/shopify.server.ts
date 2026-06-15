@@ -21,10 +21,14 @@ const shopify = shopifyApp({
   distribution: AppDistribution.AppStore,
   billing: {
     [MONTHLY_PLAN]: {
-      amount: 20,
-      currencyCode: "USD",
-      interval: BillingInterval.Every30Days,
       trialDays: 14,
+      lineItems: [
+        {
+          amount: 20,
+          currencyCode: "USD",
+          interval: BillingInterval.Every30Days,
+        },
+      ],
     },
   },
   future: {

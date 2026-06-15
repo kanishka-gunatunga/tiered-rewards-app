@@ -11,7 +11,7 @@ export const TIER_DISCOUNT_FUNCTION_HANDLE = "tier-cart-discount";
 /** Must match [discount.metafields.app.tier_rewards_config] in shopify.app.toml */
 export const TIER_DISCOUNT_METAFIELD_KEY = "tier_rewards_config";
 
-export const TIER_DISCOUNT_TITLE = "Cart tier rewards";
+export const TIER_DISCOUNT_TITLE = "CartQuest Rewards";
 
 const LIST_APP_DISCOUNTS_QUERY = `#graphql
   query ListAppAutomaticDiscounts {

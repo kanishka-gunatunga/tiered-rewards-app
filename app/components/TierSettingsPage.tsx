@@ -175,7 +175,7 @@ export default function TierSettingsPage() {
                       configure below.
                     </p>
                     <p className={styles.statusCardMeta}>
-                      Shopify discount: <strong>Cart tier rewards</strong>{" "}
+                      Shopify discount: <strong>CartQuest Rewards</strong>{" "}
                       (Admin → Discounts). Saving settings updates this discount.
                     </p>
                   </>
