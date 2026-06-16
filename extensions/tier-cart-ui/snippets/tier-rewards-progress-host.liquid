@@ -1,0 +1,34 @@
+{%- comment -%}
+  Loads tier rewards metaobject config and renders the progress bar when enabled.
+{%- endcomment -%}
+{% liquid
+  assign rewards_entry = shop.metaobjects['$app:tier_rewards_config'].default
+  assign rewards_enabled = false
+  assign tiers_json = blank
+  assign primary_color = '#bb4d00'
+  assign secondary_color = '#e17100'
+  assign background_color = '#fffaf3'
+  assign cart_subtotal_cents = cart.items_subtotal_price | default: cart.total_price
+
+  if rewards_entry
+    if rewards_entry.enabled.value == true or rewards_entry.enabled.value == 'true'
+      assign rewards_enabled = true
+    endif
+    assign tiers_json = rewards_entry.tiers.value
+  endif
+%}
+
+{% if rewards_enabled and tiers_json != blank %}
+  {% render 'tier-progress-bar',
+    heading: heading,
+    margin_top: margin_top,
+    margin_bottom: margin_bottom,
+    block_id: block_id,
+    shopify_attributes: shopify_attributes,
+    tiers_json: tiers_json,
+    primary_color: primary_color,
+    secondary_color: secondary_color,
+    background_color: background_color,
+    cart_subtotal_cents: cart_subtotal_cents
+  %}
+{% endif %}

@@ -1,43 +1,10 @@
-{% liquid
-  assign rewards_entry = shop.metaobjects['$app:tier_rewards_config'].default
-  assign rewards_enabled = false
-  assign tiers_json = blank
-  assign primary_color = '#bb4d00'
-  assign secondary_color = '#e17100'
-  assign background_color = '#fffaf3'
-  assign cart_subtotal_cents = cart.items_subtotal_price | default: cart.total_price
-
-  if rewards_entry
-    if rewards_entry.enabled.value == true or rewards_entry.enabled.value == 'true'
-      assign rewards_enabled = true
-    endif
-    assign tiers_json = rewards_entry.tiers.value
-    if rewards_entry.primary_color.value != blank
-      assign primary_color = rewards_entry.primary_color.value | append: ''
-    endif
-    if rewards_entry.secondary_color.value != blank
-      assign secondary_color = rewards_entry.secondary_color.value | append: ''
-    endif
-    if rewards_entry.background_color.value != blank
-      assign background_color = rewards_entry.background_color.value | append: ''
-    endif
-  endif
+{% render 'tier-rewards-progress-host',
+  heading: block.settings.heading,
+  margin_top: block.settings.margin_top,
+  margin_bottom: block.settings.margin_bottom,
+  block_id: block.id,
+  shopify_attributes: block.shopify_attributes
 %}
-
-{% if rewards_enabled and tiers_json != blank %}
-  {% render 'tier-progress-bar',
-    heading: block.settings.heading,
-    margin_top: block.settings.margin_top,
-    margin_bottom: block.settings.margin_bottom,
-    block_id: block.id,
-    shopify_attributes: block.shopify_attributes,
-    tiers_json: tiers_json,
-    primary_color: primary_color,
-    secondary_color: secondary_color,
-    background_color: background_color,
-    cart_subtotal_cents: cart_subtotal_cents
-  %}
-{% endif %}
 
 {% schema %}
 {
@@ -73,4 +40,3 @@
   ]
 }
 {% endschema %}
-

@@ -46,3 +46,22 @@ export const EMPTY_TIER_ROW: RewardTierFormRow = {
   minSpendDollars: "",
   discountDollars: "",
 };
+
+const HEX_COLOR_PATTERN = /^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/;
+
+export function normalizeHexColor(
+  value: string | null | undefined,
+  fallback: string,
+): string {
+  const raw = String(value ?? "").trim();
+  if (!HEX_COLOR_PATTERN.test(raw)) {
+    return fallback;
+  }
+
+  if (raw.length === 4) {
+    const [, r, g, b] = raw;
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+
+  return raw.toLowerCase();
+}

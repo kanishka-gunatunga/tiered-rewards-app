@@ -8,7 +8,6 @@ import {
 import { useAppBridge } from "@shopify/app-bridge-react";
 
 import {
-  DEFAULT_TIER_REWARDS_CONFIG,
   EMPTY_TIER_ROW,
   MAX_TIERS,
   type RewardTierFormRow,
@@ -65,14 +64,6 @@ export default function TierSettingsPage() {
         : loaderFormRows;
 
   const [tiers, setTiers] = useState<RewardTierFormRow[]>(formRows);
-  const [title, setTitle] = useState(savedConfig.title);
-  const [programTitle, setProgramTitle] = useState(savedConfig.programTitle);
-  const [homepageSubtitle, setHomepageSubtitle] = useState(
-    savedConfig.homepageSubtitle,
-  );
-  const [primaryColor, setPrimaryColor] = useState(savedConfig.primaryColor);
-  const [secondaryColor, setSecondaryColor] = useState(savedConfig.secondaryColor);
-  const [backgroundColor, setBackgroundColor] = useState(savedConfig.backgroundColor);
   const [enabled, setEnabled] = useState(savedConfig.enabled);
   const errors = actionData && !actionData.ok ? actionData.errors : [];
   const checkoutDiscountActive = actionData?.ok
@@ -81,12 +72,6 @@ export default function TierSettingsPage() {
 
   useEffect(() => {
     setTiers(formRows);
-    setTitle(savedConfig.title);
-    setProgramTitle(savedConfig.programTitle);
-    setHomepageSubtitle(savedConfig.homepageSubtitle);
-    setPrimaryColor(savedConfig.primaryColor);
-    setSecondaryColor(savedConfig.secondaryColor);
-    setBackgroundColor(savedConfig.backgroundColor);
     setEnabled(savedConfig.enabled);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- savedConfig tracks formRows updates
   }, [formRows]);
@@ -195,8 +180,9 @@ export default function TierSettingsPage() {
                   To show the rewards progress bar on your storefront, enable it in your theme editor.
                 </p>
                 <ul className={styles.errorList} style={{ color: "#4a5565", marginBottom: "16px" }}>
-                  <li><strong>Option 1 (App Embed):</strong> Enable the "Cart rewards embed" in Theme Settings &rarr; App embeds. It automatically displays on the cart page.</li>
-                  <li><strong>Option 2 (App Block):</strong> Add the "Tier rewards progress" block directly to your Cart template sections.</li>
+                  <li><strong>Option 1 (App Embed):</strong> Enable the &quot;Cart rewards embed&quot; in Theme Settings &rarr; App embeds. It automatically displays on the cart page.</li>
+                  <li><strong>Option 2 (App Block):</strong> Add the &quot;Tier rewards progress&quot; block directly to your Cart template sections.</li>
+                  <li><strong>Widget heading:</strong> Edit the &quot;Heading&quot; field in the theme editor for that block or embed (not in this admin screen).</li>
                 </ul>
                 <a
                   href="shopify:admin/themes/current/editor?context=apps"
@@ -234,101 +220,9 @@ export default function TierSettingsPage() {
               />
               <span>Program enabled</span>
             </label>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="config-title">
-                Config title (internal)
-              </label>
-              <input
-                id="config-title"
-                className={styles.input}
-                name="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="program-title">
-                Program title (storefront)
-              </label>
-              <input
-                id="program-title"
-                className={styles.input}
-                name="programTitle"
-                value={programTitle}
-                onChange={(e) => setProgramTitle(e.target.value)}
-                placeholder={DEFAULT_TIER_REWARDS_CONFIG.programTitle}
-              />
-            </div>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="homepage-subtitle">
-                Homepage subtitle
-              </label>
-              <input
-                id="homepage-subtitle"
-                className={styles.input}
-                name="homepageSubtitle"
-                value={homepageSubtitle}
-                onChange={(e) => setHomepageSubtitle(e.target.value)}
-                placeholder={DEFAULT_TIER_REWARDS_CONFIG.homepageSubtitle}
-              />
-            </div>
-          </section>
-
-          <section className={`${styles.section} ${styles.sectionSpaced}`}>
-            <h3 className={styles.sectionTitle}>Design (Storefront)</h3>
             <p className={styles.hint}>
-              Customize the colors of the progress bar to match your brand.
+              Turn off to hide storefront rewards and pause checkout tier discounts.
             </p>
-            <div className={styles.fieldRow}>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="primaryColor">
-                  Primary color
-                </label>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input
-                    type="color"
-                    id="primaryColor"
-                    name="primaryColor"
-                    value={primaryColor}
-                    onChange={(e) => setPrimaryColor(e.target.value)}
-                    style={{ width: '40px', height: '40px', padding: 0, border: 'none', cursor: 'pointer' }}
-                  />
-                  <span style={{ fontFamily: 'monospace' }}>{primaryColor}</span>
-                </div>
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="secondaryColor">
-                  Secondary color
-                </label>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input
-                    type="color"
-                    id="secondaryColor"
-                    name="secondaryColor"
-                    value={secondaryColor}
-                    onChange={(e) => setSecondaryColor(e.target.value)}
-                    style={{ width: '40px', height: '40px', padding: 0, border: 'none', cursor: 'pointer' }}
-                  />
-                  <span style={{ fontFamily: 'monospace' }}>{secondaryColor}</span>
-                </div>
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="backgroundColor">
-                  Background color
-                </label>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input
-                    type="color"
-                    id="backgroundColor"
-                    name="backgroundColor"
-                    value={backgroundColor}
-                    onChange={(e) => setBackgroundColor(e.target.value)}
-                    style={{ width: '40px', height: '40px', padding: 0, border: 'none', cursor: 'pointer' }}
-                  />
-                  <span style={{ fontFamily: 'monospace' }}>{backgroundColor}</span>
-                </div>
-              </div>
-            </div>
           </section>
 
           <section className={`${styles.section} ${styles.sectionSpaced}`}>

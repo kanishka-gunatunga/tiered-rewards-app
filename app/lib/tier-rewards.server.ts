@@ -3,6 +3,7 @@ import type { authenticate } from "../shopify.server"; // type-only
 import {
   DEFAULT_TIER_REWARDS_CONFIG,
   MAX_TIERS,
+  normalizeHexColor,
   type RewardTier,
   type RewardTierFormRow,
   type TierRewardsConfig,
@@ -169,9 +170,18 @@ export async function loadTierRewardsConfig(
     homepageSubtitle:
       node.homepageSubtitle?.value ||
       DEFAULT_TIER_REWARDS_CONFIG.homepageSubtitle,
-    primaryColor: node.primaryColor?.value || DEFAULT_TIER_REWARDS_CONFIG.primaryColor,
-    secondaryColor: node.secondaryColor?.value || DEFAULT_TIER_REWARDS_CONFIG.secondaryColor,
-    backgroundColor: node.backgroundColor?.value || DEFAULT_TIER_REWARDS_CONFIG.backgroundColor,
+    primaryColor: normalizeHexColor(
+      node.primaryColor?.value,
+      DEFAULT_TIER_REWARDS_CONFIG.primaryColor,
+    ),
+    secondaryColor: normalizeHexColor(
+      node.secondaryColor?.value,
+      DEFAULT_TIER_REWARDS_CONFIG.secondaryColor,
+    ),
+    backgroundColor: normalizeHexColor(
+      node.backgroundColor?.value,
+      DEFAULT_TIER_REWARDS_CONFIG.backgroundColor,
+    ),
     tiers: tiers.length > 0 ? tiers : DEFAULT_TIER_REWARDS_CONFIG.tiers,
   };
 }
@@ -279,13 +289,13 @@ export function parseTierRowsFromFormData(formData: FormData): RewardTier[] {
 
 export function parseConfigFromFormData(formData: FormData): TierRewardsConfig {
   return {
-    title: String(formData.get("title") ?? "").trim() || "Default rewards",
+    title: DEFAULT_TIER_REWARDS_CONFIG.title,
     enabled: formData.get("enabled") === "on",
-    programTitle: String(formData.get("programTitle") ?? "").trim(),
-    homepageSubtitle: String(formData.get("homepageSubtitle") ?? "").trim(),
-    primaryColor: String(formData.get("primaryColor") ?? "").trim() || DEFAULT_TIER_REWARDS_CONFIG.primaryColor,
-    secondaryColor: String(formData.get("secondaryColor") ?? "").trim() || DEFAULT_TIER_REWARDS_CONFIG.secondaryColor,
-    backgroundColor: String(formData.get("backgroundColor") ?? "").trim() || DEFAULT_TIER_REWARDS_CONFIG.backgroundColor,
+    programTitle: DEFAULT_TIER_REWARDS_CONFIG.programTitle,
+    homepageSubtitle: DEFAULT_TIER_REWARDS_CONFIG.homepageSubtitle,
+    primaryColor: DEFAULT_TIER_REWARDS_CONFIG.primaryColor,
+    secondaryColor: DEFAULT_TIER_REWARDS_CONFIG.secondaryColor,
+    backgroundColor: DEFAULT_TIER_REWARDS_CONFIG.backgroundColor,
     tiers: parseTierRowsFromFormData(formData),
   };
 }
