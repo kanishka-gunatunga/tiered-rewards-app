@@ -1,0 +1,102 @@
+<!DOCTYPE html><html lang="en"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="shopify-api-key" content="204f64bb421473fb6aacf675c3e1ab41"/><link rel="preconnect" href="https://cdn.shopify.com/"/><link rel="stylesheet" href="https://cdn.shopify.com/static/fonts/inter/v4/styles.css"/></head><body><script src="https://cdn.shopify.com/shopifycloud/polaris.js"></script><s-page><form method="post" action="/auth/login" data-discover="true"><s-section heading="Log in"><s-text-field name="shop" label="Shop domain" details="example.myshopify.com" value="" autocomplete="on"></s-text-field><s-button type="submit">Log in</s-button></s-section></form></s-page><script>((storageKey2, restoreKey) => {
+    if (!window.history.state || !window.history.state.key) {
+      let key = Math.random().toString(32).slice(2);
+      window.history.replaceState({ key }, "");
+    }
+    try {
+      let positions = JSON.parse(sessionStorage.getItem(storageKey2) || "{}");
+      let storedY = positions[restoreKey || window.history.state.key];
+      if (typeof storedY === "number") {
+        window.scrollTo(0, storedY);
+      }
+    } catch (error) {
+      console.error(error);
+      sessionStorage.removeItem(storageKey2);
+    }
+  })("react-router-scroll-positions", null)</script><link rel="modulepreload" href="/assets/entry.client-BAgPuoxV.js"/><link rel="modulepreload" href="/assets/chunk-4N6VE7H7-ChtkizWQ.js"/><link rel="modulepreload" href="/assets/root-Bb9S8QIE.js"/><link rel="modulepreload" href="/assets/route-D68zLkUW.js"/><link rel="modulepreload" href="/assets/AppProxyProvider-0uVZhB1C.js"/><script>window.__reactRouterContext = {"basename":"/","future":{"unstable_optimizeDeps":false,"v8_passThroughRequests":false,"unstable_trailingSlashAwareDataRequests":false,"unstable_previewServerPrerendering":false,"v8_middleware":false,"v8_splitRouteModules":"enforce","v8_viteEnvironmentApi":false},"routeDiscovery":{"mode":"lazy","manifestPath":"/__manifest"},"ssr":true,"isSpaMode":false};window.__reactRouterContext.stream = new ReadableStream({start(controller){window.__reactRouterContext.streamController = controller;}}).pipeThrough(new TextEncoderStream());</script><script type="module" async="">;
+import * as route0 from "/assets/root-Bb9S8QIE.js";
+import * as route1 from "/assets/route-D68zLkUW.js";
+  window.__reactRouterManifest = {
+  "entry": {
+    "module": "/assets/entry.client-BAgPuoxV.js",
+    "imports": [
+      "/assets/chunk-4N6VE7H7-ChtkizWQ.js"
+    ],
+    "css": []
+  },
+  "routes": {
+    "root": {
+      "id": "root",
+      "path": "",
+      "hasAction": false,
+      "hasLoader": true,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasDefaultExport": true,
+      "hasErrorBoundary": false,
+      "module": "/assets/root-Bb9S8QIE.js",
+      "imports": [
+        "/assets/chunk-4N6VE7H7-ChtkizWQ.js"
+      ],
+      "css": []
+    },
+    "routes/auth.login": {
+      "id": "routes/auth.login",
+      "parentId": "root",
+      "path": "auth/login",
+      "hasAction": true,
+      "hasLoader": true,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasDefaultExport": true,
+      "hasErrorBoundary": false,
+      "module": "/assets/route-D68zLkUW.js",
+      "imports": [
+        "/assets/chunk-4N6VE7H7-ChtkizWQ.js",
+        "/assets/AppProxyProvider-0uVZhB1C.js"
+      ],
+      "css": []
+    },
+    "routes/_index": {
+      "id": "routes/_index",
+      "parentId": "root",
+      "index": true,
+      "hasAction": false,
+      "hasLoader": true,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasDefaultExport": true,
+      "hasErrorBoundary": false,
+      "module": "/assets/route-DGHff8U9.js",
+      "imports": [
+        "/assets/chunk-4N6VE7H7-ChtkizWQ.js"
+      ],
+      "css": [
+        "/assets/route-CNPfFM0M.css"
+      ]
+    },
+    "routes/auth.$": {
+      "id": "routes/auth.$",
+      "parentId": "root",
+      "path": "auth/*",
+      "hasAction": false,
+      "hasLoader": true,
+      "hasClientAction": false,
+      "hasClientLoader": false,
+      "hasClientMiddleware": false,
+      "hasDefaultExport": false,
+      "hasErrorBoundary": false,
+      "module": "/assets/auth._-l0sNRNKZ.js",
+      "imports": [],
+      "css": []
+    }
+  },
+  "url": "/assets/manifest-5a662937.js",
+  "version": "5a662937"
+};
+  window.__reactRouterRouteModules = {"root":route0,"routes/auth.login":route1};
+
+import("/assets/entry.client-BAgPuoxV.js");</script></body></html><!--$--><script>window.__reactRouterContext.streamController.enqueue("[{\"_1\":2,\"_3\":-5,\"_4\":-5},\"loaderData\",{\"_5\":6,\"_7\":8},\"actionData\",\"errors\",\"root\",{\"_10\":11},\"routes/auth.login\",{\"_4\":9},{},\"apiKey\",\"204f64bb421473fb6aacf675c3e1ab41\"]\n");</script><!--$--><script>window.__reactRouterContext.streamController.close();</script><!--/$--><!--/$-->
