@@ -21,7 +21,7 @@ query CartInput {
     }
   }
   shop {
-    metaobject(handle: {type: "$app:tier_rewards_config", handle: "default"}) {
+    metaobject(handle: {type: "$app:tier_rewards_config", handle: "active"}) {
       enabled: field(key: "enabled") {
         value
       }

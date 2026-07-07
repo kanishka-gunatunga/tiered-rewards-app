@@ -70,52 +70,60 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { admin, billing } = await authenticate.admin(request);
-  
-  await billing.require({
-    plans: [MONTHLY_PLAN],
-    isTest: true, // Remove or set to false in production
-    onFailure: async () => billing.request({ plan: MONTHLY_PLAN, isTest: true }),
-  });
-
-  const formData = await request.formData();
-  const config = parseConfigFromFormData(formData);
-  const result = await saveTierRewardsConfig(admin, config);
-
-  if (!result.ok) {
-    return {
-      ok: false as const,
-      errors: result.errors,
-      formRows: configToFormRows(config),
-      config,
-    };
-  }
-
-  let checkoutDiscountActive = false;
   try {
-    await syncTierRewardsDiscount(admin, config);
-    checkoutDiscountActive = true;
+    const { admin } = await authenticate.admin(request);
+
+    const formData = await request.formData();
+    const config = parseConfigFromFormData(formData);
+    const result = await saveTierRewardsConfig(admin, config);
+
+    if (!result.ok) {
+      return {
+        ok: false as const,
+        errors: result.errors,
+        formRows: configToFormRows(config),
+        config,
+      };
+    }
+
+    let checkoutDiscountActive = false;
+    try {
+      await syncTierRewardsDiscount(admin, config);
+      checkoutDiscountActive = true;
+    } catch (error) {
+      console.error("[app] discount sync failed:", error);
+      return {
+        ok: false as const,
+        errors: [
+          error instanceof Error
+            ? error.message
+            : "Settings saved but checkout discount could not be updated. Run shopify app deploy, then save again.",
+        ],
+        formRows: configToFormRows(config),
+        config,
+        checkoutDiscountActive: false,
+      };
+    }
+
+    return {
+      ok: true as const,
+      config,
+      formRows: configToFormRows(config),
+      checkoutDiscountActive,
+    };
   } catch (error) {
-    console.error("[app] discount sync failed:", error);
+    console.error("[app] save settings action failed:", error);
     return {
       ok: false as const,
       errors: [
         error instanceof Error
           ? error.message
-          : "Settings saved but checkout discount could not be updated. Keep shopify app dev running, then save again.",
+          : "Could not save settings. Check server logs (pm2 logs cartquest).",
       ],
-      formRows: configToFormRows(config),
-      config,
-      checkoutDiscountActive: false,
+      formRows: configToFormRows(DEFAULT_TIER_REWARDS_CONFIG),
+      config: { ...DEFAULT_TIER_REWARDS_CONFIG },
     };
   }
-
-  return {
-    ok: true as const,
-    config,
-    formRows: configToFormRows(config),
-    checkoutDiscountActive,
-  };
 };
 
 type AppLoaderData = {
@@ -136,7 +144,18 @@ export default function App() {
 }
 
 export function ErrorBoundary() {
-  return boundary.error(useRouteError());
+  const error = useRouteError();
+  if (error instanceof Error && error.message) {
+    return (
+      <s-page heading="Rewards tiers">
+        <div style={{ padding: "16px" }}>
+          <h2>Something went wrong</h2>
+          <p>{error.message}</p>
+        </div>
+      </s-page>
+    );
+  }
+  return boundary.error(error);
 }
 
 export const headers: HeadersFunction = (headersArgs) => {

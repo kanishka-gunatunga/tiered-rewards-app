@@ -10,10 +10,30 @@ const viteDevServer =
         })
       );
 
+const serverBuild = viteDevServer
+  ? undefined
+  : await import("./build/server/index.js");
+
+function withAllowedActionOrigins(build) {
+  let appHost = "shopify.ktcloud365.com";
+  try {
+    if (process.env.SHOPIFY_APP_URL) {
+      appHost = new URL(process.env.SHOPIFY_APP_URL).host;
+    }
+  } catch {
+    // keep default host
+  }
+
+  return {
+    ...build,
+    allowedActionOrigins: ["admin.shopify.com", appHost],
+  };
+}
+
 const remixHandler = createRequestHandler({
   build: viteDevServer
     ? () => viteDevServer.ssrLoadModule("virtual:react-router/server-build")
-    : await import("./build/server/index.js"),
+    : withAllowedActionOrigins(serverBuild),
 });
 
 const app = express();

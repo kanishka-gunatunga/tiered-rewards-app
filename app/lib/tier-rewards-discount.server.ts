@@ -155,7 +155,7 @@ async function createAutomaticDiscount(
   const discountId = createResult?.automaticAppDiscount?.discountId;
   if (!discountId) {
     throw new Error(
-      "Create discount returned no discountId. Is shopify app dev running with the function extension?",
+      "Create discount returned no discountId. Run shopify app deploy to publish the checkout discount function, then save again.",
     );
   }
 

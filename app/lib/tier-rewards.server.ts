@@ -22,39 +22,98 @@ type AdminGraphQLClient = Awaited<
 >["admin"];
 
 export const TIER_REWARDS_METAOBJECT_TYPE = "$app:tier_rewards_config";
-export const TIER_REWARDS_CONFIG_HANDLE = "default";
+/** Avoid handle "default" — orphaned entries from reinstall can block metaobjectUpsert. */
+export const TIER_REWARDS_CONFIG_HANDLE = "active";
 
-const METAOBJECT_BY_HANDLE_QUERY = `#graphql
-  query TierRewardsConfigByHandle($handle: MetaobjectHandleInput!) {
-    metaobjectByHandle(handle: $handle) {
-      id
-      title: field(key: "title") {
-        value
-      }
-      enabled: field(key: "enabled") {
-        value
-      }
-      programTitle: field(key: "program_title") {
-        value
-      }
-      homepageSubtitle: field(key: "homepage_subtitle") {
-        value
-      }
-      primaryColor: field(key: "primary_color") {
-        value
-      }
-      secondaryColor: field(key: "secondary_color") {
-        value
-      }
-      backgroundColor: field(key: "background_color") {
-        value
-      }
-      tiers: field(key: "tiers") {
-        jsonValue
+const METAOBJECT_CONFIG_FIELDS = `
+  id
+  handle
+  title: field(key: "title") {
+    value
+  }
+  enabled: field(key: "enabled") {
+    value
+  }
+  programTitle: field(key: "program_title") {
+    value
+  }
+  homepageSubtitle: field(key: "homepage_subtitle") {
+    value
+  }
+  primaryColor: field(key: "primary_color") {
+    value
+  }
+  secondaryColor: field(key: "secondary_color") {
+    value
+  }
+  backgroundColor: field(key: "background_color") {
+    value
+  }
+  tiers: field(key: "tiers") {
+    jsonValue
+  }
+`;
+
+const METAOBJECTS_QUERY = `#graphql
+  query TierRewardsConfigEntries {
+    metaobjects(type: "${TIER_REWARDS_METAOBJECT_TYPE}", first: 10) {
+      nodes {
+        ${METAOBJECT_CONFIG_FIELDS}
       }
     }
   }
 `;
+
+type TierRewardsMetaobjectNode = {
+  handle?: string | null;
+  title?: { value?: string | null };
+  enabled?: { value?: string | null };
+  programTitle?: { value?: string | null };
+  homepageSubtitle?: { value?: string | null };
+  primaryColor?: { value?: string | null };
+  secondaryColor?: { value?: string | null };
+  backgroundColor?: { value?: string | null };
+  tiers?: { jsonValue?: unknown };
+};
+
+function pickTierRewardsMetaobjectNode(
+  nodes: TierRewardsMetaobjectNode[],
+): TierRewardsMetaobjectNode | null {
+  if (nodes.length === 0) return null;
+
+  return (
+    nodes.find((node) => node.handle === TIER_REWARDS_CONFIG_HANDLE) ?? nodes[0]
+  );
+}
+
+function metaobjectNodeToConfig(
+  node: TierRewardsMetaobjectNode,
+): TierRewardsConfig {
+  const tiers = parseTiersJson(node.tiers?.jsonValue);
+
+  return {
+    title: node.title?.value || DEFAULT_TIER_REWARDS_CONFIG.title,
+    enabled: parseBooleanField(node.enabled?.value),
+    programTitle:
+      node.programTitle?.value || DEFAULT_TIER_REWARDS_CONFIG.programTitle,
+    homepageSubtitle:
+      node.homepageSubtitle?.value ||
+      DEFAULT_TIER_REWARDS_CONFIG.homepageSubtitle,
+    primaryColor: normalizeHexColor(
+      node.primaryColor?.value,
+      DEFAULT_TIER_REWARDS_CONFIG.primaryColor,
+    ),
+    secondaryColor: normalizeHexColor(
+      node.secondaryColor?.value,
+      DEFAULT_TIER_REWARDS_CONFIG.secondaryColor,
+    ),
+    backgroundColor: normalizeHexColor(
+      node.backgroundColor?.value,
+      DEFAULT_TIER_REWARDS_CONFIG.backgroundColor,
+    ),
+    tiers: tiers.length > 0 ? tiers : DEFAULT_TIER_REWARDS_CONFIG.tiers,
+  };
+}
 
 const METAOBJECT_UPSERT_MUTATION = `#graphql
   mutation TierRewardsConfigUpsert(
@@ -122,68 +181,33 @@ function parseBooleanField(value: string | null | undefined): boolean {
 export async function loadTierRewardsConfig(
   admin: AdminGraphQLClient,
 ): Promise<TierRewardsConfig> {
-  const response = await admin.graphql(METAOBJECT_BY_HANDLE_QUERY, {
-    variables: {
-      handle: {
-        type: TIER_REWARDS_METAOBJECT_TYPE,
-        handle: TIER_REWARDS_CONFIG_HANDLE,
-      },
-    },
-  });
+  const response = await admin.graphql(METAOBJECTS_QUERY);
   const json = (await response.json()) as {
     data?: {
-      metaobjectByHandle?: {
-        title?: { value?: string | null };
-        enabled?: { value?: string | null };
-        programTitle?: { value?: string | null };
-        homepageSubtitle?: { value?: string | null };
-        primaryColor?: { value?: string | null };
-        secondaryColor?: { value?: string | null };
-        backgroundColor?: { value?: string | null };
-        tiers?: { jsonValue?: unknown };
-      } | null;
+      metaobjects?: {
+        nodes?: TierRewardsMetaobjectNode[];
+      };
     };
     errors?: { message: string }[];
   };
 
   if (json.errors?.length) {
     console.error(
-      "[tier-rewards] metaobjectByHandle failed:",
+      "[tier-rewards] metaobjects query failed:",
       JSON.stringify(json.errors),
     );
     return { ...DEFAULT_TIER_REWARDS_CONFIG };
   }
 
-  const node = json.data?.metaobjectByHandle;
+  const node = pickTierRewardsMetaobjectNode(
+    json.data?.metaobjects?.nodes ?? [],
+  );
 
   if (!node) {
     return { ...DEFAULT_TIER_REWARDS_CONFIG };
   }
 
-  const tiers = parseTiersJson(node.tiers?.jsonValue);
-
-  return {
-    title: node.title?.value || DEFAULT_TIER_REWARDS_CONFIG.title,
-    enabled: parseBooleanField(node.enabled?.value),
-    programTitle:
-      node.programTitle?.value || DEFAULT_TIER_REWARDS_CONFIG.programTitle,
-    homepageSubtitle:
-      node.homepageSubtitle?.value ||
-      DEFAULT_TIER_REWARDS_CONFIG.homepageSubtitle,
-    primaryColor: normalizeHexColor(
-      node.primaryColor?.value,
-      DEFAULT_TIER_REWARDS_CONFIG.primaryColor,
-    ),
-    secondaryColor: normalizeHexColor(
-      node.secondaryColor?.value,
-      DEFAULT_TIER_REWARDS_CONFIG.secondaryColor,
-    ),
-    backgroundColor: normalizeHexColor(
-      node.backgroundColor?.value,
-      DEFAULT_TIER_REWARDS_CONFIG.backgroundColor,
-    ),
-    tiers: tiers.length > 0 ? tiers : DEFAULT_TIER_REWARDS_CONFIG.tiers,
-  };
+  return metaobjectNodeToConfig(node);
 }
 
 export function validateTierRewardsConfig(
@@ -309,28 +333,60 @@ export async function saveTierRewardsConfig(
     return { ok: false, errors: validationErrors };
   }
 
-  const response = await admin.graphql(METAOBJECT_UPSERT_MUTATION, {
-    variables: {
-      handle: {
-        type: TIER_REWARDS_METAOBJECT_TYPE,
-        handle: TIER_REWARDS_CONFIG_HANDLE,
+  let response: Response;
+  try {
+    response = await admin.graphql(METAOBJECT_UPSERT_MUTATION, {
+      variables: {
+        handle: {
+          type: TIER_REWARDS_METAOBJECT_TYPE,
+          handle: TIER_REWARDS_CONFIG_HANDLE,
+        },
+        metaobject: {
+          fields: [
+            { key: "title", value: config.title },
+            { key: "enabled", value: config.enabled ? "true" : "false" },
+            { key: "program_title", value: config.programTitle },
+            { key: "homepage_subtitle", value: config.homepageSubtitle },
+            { key: "primary_color", value: config.primaryColor },
+            { key: "secondary_color", value: config.secondaryColor },
+            { key: "background_color", value: config.backgroundColor },
+            { key: "tiers", value: JSON.stringify(config.tiers) },
+          ],
+        },
       },
-      metaobject: {
-        fields: [
-          { key: "title", value: config.title },
-          { key: "enabled", value: config.enabled ? "true" : "false" },
-          { key: "program_title", value: config.programTitle },
-          { key: "homepage_subtitle", value: config.homepageSubtitle },
-          { key: "primary_color", value: config.primaryColor },
-          { key: "secondary_color", value: config.secondaryColor },
-          { key: "background_color", value: config.backgroundColor },
-          { key: "tiers", value: JSON.stringify(config.tiers) },
-        ],
-      },
-    },
-  });
+    });
+  } catch (error) {
+    console.error("[tier-rewards] metaobjectUpsert request failed:", error);
+    return {
+      ok: false,
+      errors: [
+        error instanceof Error
+          ? error.message
+          : "Could not reach Shopify to save settings.",
+      ],
+    };
+  }
 
-  const json = await response.json();
+  const json = (await response.json()) as {
+    data?: {
+      metaobjectUpsert?: {
+        userErrors?: Array<{ message: string }>;
+      };
+    };
+    errors?: Array<{ message: string }>;
+  };
+
+  if (json.errors?.length) {
+    console.error(
+      "[tier-rewards] metaobjectUpsert GraphQL errors:",
+      JSON.stringify(json.errors),
+    );
+    return {
+      ok: false,
+      errors: json.errors.map((e) => e.message || "Save failed."),
+    };
+  }
+
   const userErrors = json.data?.metaobjectUpsert?.userErrors ?? [];
 
   if (userErrors.length > 0) {

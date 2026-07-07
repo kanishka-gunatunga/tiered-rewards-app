@@ -142,23 +142,87 @@ Expected: `https://admin.shopify.com/store/example/oauth/install?...`
 
 ## 2.1 Create or pick a dev store
 
-1. [partners.shopify.com](https://partners.shopify.com) → **Stores**
-2. Create a **development store** (or use an existing one)
+1. [dev.shopify.com/dashboard](https://dev.shopify.com/dashboard) → **Stores** (left sidebar)
+2. Click **Create store** (or use an existing dev store)
 3. Note the store URL: `your-dev-store.myshopify.com`
+
+*(Alternative: Partner Dashboard → **Stores** → create a development store.)*
 
 ---
 
 ## 2.2 Install CartQuest (correct method)
 
-1. Partner Dashboard → **Apps** → **CartQuest**
-2. Click **Test on development store** (or **Select store**)
+**Important:** Do **not** run `shopify app dev` while testing the production-hosted app. With `automatically_update_urls_on_dev = true`, CLI replaces Shopify’s App URL with a temporary Cloudflare tunnel (e.g. `*.trycloudflare.com`). That breaks install/OAuth when the tunnel stops. Phase 2 testing uses your live server at `https://shopify.ktcloud365.com` only.
+
+**Use the Dev Dashboard** (Partner Dashboard no longer has a separate app Configuration / install screen for URLs):
+
+1. [dev.shopify.com/dashboard](https://dev.shopify.com/dashboard) → **Apps** → **CartQuest**
+2. On the app **Home** page, find **Installs** → click **Install app**
 3. Choose your dev store
-4. Click **Install app**
-5. Approve permissions
+4. Approve permissions if prompted
+
+*(Alternative: Partner Dashboard → **Apps** → **CartQuest** → **Test on development store** — if that button is still visible.)*
 
 **Expected:** App opens **inside Shopify Admin** (embedded), not the placeholder homepage.
 
-If install fails, check `pm2 logs cartquest` immediately.
+If install fails, check `pm2 logs cartquest` immediately on the server.
+
+### Troubleshooting: `*.trycloudflare.com` DNS error on install
+
+If install redirects to a dead `*.trycloudflare.com` URL, a **dev preview** from an old `shopify app dev` session is still active on that dev store. The released app version (`cartquest-9`) is fine — the store is still using the stale preview URL.
+
+**Fix (CLI):**
+
+```bash
+cd d:\kodetech\tiered-rewards-app
+shopify app config use cart-tier-rewards-public
+shopify app dev clean -s YOUR-DEV-STORE.myshopify.com
+```
+
+Replace `YOUR-DEV-STORE` with the exact dev store you are installing on (not necessarily the store linked in CLI).
+
+**Fix (Admin UI):** In the dev store’s Shopify Admin, open the **Dev Console** (appears when a dev preview exists) → **Clean dev preview**.
+
+Then install again from Dev Dashboard → **Install app**.
+
+### Troubleshooting: HTTP ERROR 431 on install
+
+**431 = request headers too large.** This usually happens on the OAuth callback to `https://shopify.ktcloud365.com/auth/...` after you click **Install app**. Common causes:
+
+1. **Too many OAuth cookies** from repeated failed install attempts (very common while debugging)
+2. **IIS default header limit** (~16 KB) is too small for Shopify embedded-app OAuth
+
+**Fix A — try first (browser, no server change):**
+
+1. Close all tabs for `shopify.ktcloud365.com`, `admin.shopify.com`, and your dev store
+2. Clear cookies for those sites **or** use a fresh **Incognito / InPrivate** window
+3. Dev Dashboard → **Install app** → pick dev store → click **Install** once (don’t retry rapidly if it fails)
+
+**Fix B — if 431 still happens in Incognito (server / IIS):**
+
+On the Windows server, run **PowerShell as Administrator**:
+
+```powershell
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\HTTP\Parameters" -Name "MaxFieldLength" -Value 65536 -PropertyType DWord -Force
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\HTTP\Parameters" -Name "MaxRequestBytes" -Value 65536 -PropertyType DWord -Force
+net stop http /y
+net start http
+iisreset
+```
+
+This raises IIS/http.sys header limits for Shopify OAuth callbacks. Ask your server admin if you don’t have admin access.
+
+**Verify after fix:** Install should complete and CartQuest opens embedded in Shopify Admin.
+
+### Troubleshooting: Application Error / `Error: Bad Request` on Save settings
+
+If logs show `Error: Bad Request` at `singleFetchAction`, React Router blocked the form POST because the request came from `admin.shopify.com` (embedded iframe) but your app only trusted its own host. Ensure `react-router.config.ts` includes:
+
+```ts
+allowedActionOrigins: ["admin.shopify.com", "shopify.ktcloud365.com"],
+```
+
+Then **`npm run build`** and restart PM2. Editing `.tsx` files alone is not enough — the server runs compiled code in `build/`.
 
 ---
 
@@ -173,6 +237,50 @@ On first open, you should see a **billing approval** screen.
 - [ ] After approval, **Rewards settings** page loads
 
 If billing blocks you, the app will not load settings until approved.
+
+### Troubleshooting: Application Error when clicking Save settings
+
+The save button runs a server action (metaobject save + checkout discount sync). A blank **Application Error** means the server threw an uncaught exception.
+
+**Step 1 — check server logs (most important):**
+
+```powershell
+cd C:\inetpub\wwwroot\tiered-rewards-app
+pm2 logs cartquest --lines 80
+```
+
+Look for `[app] save settings action failed`, `[tier-rewards] metaobjectUpsert`, or `[app] discount sync failed`.
+
+**Step 2 — common fixes:**
+
+| Log message | Fix |
+|-------------|-----|
+| `431` / header too large | Clear cookies or use Incognito; apply IIS header limit fix from section 2.2 |
+| `discount sync failed` / function not found | Run `shopify app deploy` locally, then save again |
+| `metaobjectUpsert` / type not found | Usually an **orphaned metaobject** from a previous app uninstall (handle `default`). Deploy latest app code (uses handle `active`), run `shopify app deploy`, rebuild + restart PM2, then save again. If it persists, contact Shopify Support to remove orphaned metaobjects. |
+| Database / Prisma error | Check `DATABASE_URL` in `.env`, run `npm run setup` |
+
+**Step 3 — deploy latest app code to server** (includes better error messages instead of Application Error):
+
+```powershell
+cd C:\inetpub\wwwroot\tiered-rewards-app
+npm run build
+pm2 restart cartquest --update-env
+```
+
+### Troubleshooting: `No metaobject definition exists for type "app--…--tier_rewards_config"`
+
+This is **not** a missing deploy. The metaobject definition exists, but Shopify has a known bug when the app was previously uninstalled: an invisible orphaned entry with handle **`default`** blocks `metaobjectUpsert` on that handle.
+
+**Fix (included in latest code):** the app now saves config under handle **`active`** instead of `default`. After you deploy:
+
+1. **Locally:** `shopify app deploy` (updates checkout discount + theme extension to read `active`)
+2. **On server:** `npm run build` and `pm2 restart cartquest --update-env`
+3. Hard refresh CartQuest in Admin and click **Save settings** again
+
+Until you save once, the admin may still load an older config entry if one exists on the store. After save, storefront and checkout use the new `active` entry.
+
+**Also remove dev preview** if you still see “dev previews (1)” in the app header — run `shopify app dev clean -s YOUR-DEV-STORE.myshopify.com` locally.
 
 ---
 
