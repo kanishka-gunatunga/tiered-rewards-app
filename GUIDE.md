@@ -319,21 +319,60 @@ If status stays **“Setup needed”** after save:
 
 ## 2.5 Storefront testing — progress bar (theme extension)
 
-CartQuest has a **theme extension** (`tier-cart-ui`). Merchants must enable it in the theme editor. Test this too.
+CartQuest has a **theme extension** (`tier-cart-ui`). Merchants enable it in the theme editor.
 
-1. In the app, click **Open theme editor** (or Admin → **Online Store → Themes → Customize**)
-2. **Option A — App embed:**
-   - Theme Settings → **App embeds**
-   - Enable **“Cart rewards embed”**
-3. **Option B — App block:**
-   - Open **Cart** template
-   - Add block **“Tier rewards progress”**
+### Recommended cart page setup
+
+| Piece | Where | Purpose |
+|-------|--------|---------|
+| **Cart tier progress** (app block) | Cart template → cart items section | Full progress bar below “Your cart”, above line items |
+| **Cart drawer guard** (app embed) | Theme Settings → App embeds | Stops the progress bar from breaking the cart drawer |
+| **Floating widget** (app block) | Homepage or other templates | Optional savings pill elsewhere |
+
+**Steps — cart page progress bar**
+
+1. Admin → **Online Store → Themes → Customize**
+2. Open the **Cart** template (not the cart drawer)
+3. In the left sidebar, select the **cart items** section (Dawn: “Items”, often `main-cart-items`)
+4. Click **Add block** → **Apps** → **Cart tier progress**
+5. **Drag the block to the top** of that section’s block list so it renders below the page title and above the product list
+6. Remove any old **“Tier rewards progress”** block from the wrong section if you added one earlier
+7. Theme Settings → **App embeds** → keep **“Cart drawer guard”** enabled
+
+**If “Cart tier progress” is not offered in your cart section**
+
+Some themes do not expose app blocks inside the cart items section. A theme developer must edit the cart section once:
+
+1. **Online Store → Themes → Edit code**
+2. Open `templates/cart.json` and note the main section name (e.g. `main-cart-items`)
+3. Open that section under **Sections**
+4. In the section `{% schema %}`, add a blocks entry:
+
+```json
+"blocks": [
+  { "type": "@app" }
+]
+```
+
+5. In the section `.liquid` file, render app blocks **above** the line-items loop (below the title is ideal):
+
+```liquid
+{% for block in section.blocks %}
+  {% case block.type %}
+    {% when '@app' %}
+      {% render block %}
+  {% endcase %}
+{% endfor %}
+```
+
+6. Save, return to **Customize → Cart**, and add **Cart tier progress** again
 
 Checklist:
 
-- [ ] Progress bar/widget visible on cart page
-- [ ] Widget reflects tier thresholds (spend X to unlock Y)
-- [ ] Colors match your admin color settings
+- [ ] Progress bar on **cart page** only (not squashed in cart drawer)
+- [ ] Cart drawer shows the **discount line** under subtotal (no full widget)
+- [ ] Widget reflects tier thresholds
+- [ ] Floating widget still works on homepage if enabled
 
 ---
 

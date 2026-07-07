@@ -8,13 +8,12 @@
 
 {% schema %}
 {
-  "name": "Tier rewards progress",
+  "name": "Cart tier progress",
   "target": "section",
+  "enabled_on": {
+    "templates": ["cart"]
+  },
   "settings": [
-    {
-      "type": "paragraph",
-      "content": "For the cart page, prefer the \"Cart tier progress\" block (cart template only). Use this block on other templates if needed."
-    },
     {
       "type": "text",
       "id": "heading",

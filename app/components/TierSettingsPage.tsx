@@ -55,6 +55,13 @@ export default function TierSettingsPage() {
     checkoutDiscountActive: loaderCheckoutDiscountActive,
   } = loaderData;
 
+  const cartProgressPasteCode = `{% comment %} CartQuest: paste under "Your cart", before the product list {% endcomment %}
+{% for block in section.blocks %}
+  {% if block.type == '@app' %}
+    {% render block %}
+  {% endif %}
+{% endfor %}`;
+
   const savedConfig = actionData?.ok ? actionData.config : loaderConfig;
   const formRows =
     actionData && !actionData.ok
@@ -174,25 +181,46 @@ export default function TierSettingsPage() {
 
               <div className={styles.statusCard}>
                 <div className={styles.statusCardHeader}>
-                  <h3 className={styles.statusCardTitle}>Storefront setup</h3>
+                  <h3 className={styles.statusCardTitle}>Cart page progress bar</h3>
                 </div>
                 <p className={styles.statusCardBody} style={{ marginBottom: "12px" }}>
-                  To show the rewards progress bar on your storefront, enable it in your theme editor.
+                  Show the tier progress bar on your cart page — under the page
+                  title and above the product list.
                 </p>
-                <ul className={styles.errorList} style={{ color: "#4a5565", marginBottom: "16px" }}>
-                  <li><strong>Option 1 (App Embed):</strong> Enable the &quot;Cart rewards embed&quot; in Theme Settings &rarr; App embeds. It automatically displays on the cart page.</li>
-                  <li><strong>Option 2 (App Block):</strong> Add the &quot;Tier rewards progress&quot; block directly to your Cart template sections.</li>
-                  <li><strong>Widget heading:</strong> Edit the &quot;Heading&quot; field in the theme editor for that block or embed (not in this admin screen).</li>
-                </ul>
-                <a
-                  href="shopify:admin/themes/current/editor?context=apps"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.buttonSecondary}
-                  style={{ textDecoration: "none", display: "inline-block" }}
-                >
-                  Open theme editor
-                </a>
+
+                <p className={styles.setupSubtitle}>Theme editor (usual way)</p>
+                <ol className={styles.setupSteps}>
+                  <li>Online Store → Themes → <strong>Customize</strong></li>
+                  <li>Open the <strong>Cart</strong> page</li>
+                  <li>Click your <strong>cart items</strong> section in the sidebar</li>
+                  <li>
+                    <strong>Add block</strong> → <strong>Apps</strong> →{" "}
+                    <strong>Cart tier progress</strong>
+                  </li>
+                  <li>Drag it above the product list, then click <strong>Save</strong></li>
+                </ol>
+
+                <p className={styles.setupSubtitle}>Theme code (optional)</p>
+                <p className={styles.statusCardBody} style={{ marginBottom: "8px" }}>
+                  Use this only if you need the bar in an exact spot inside your cart
+                  section file. Paste the code below where it should appear (usually
+                  right after the &quot;Your cart&quot; heading). Then add the{" "}
+                  <strong>Cart tier progress</strong> block in the theme editor as
+                  above.
+                </p>
+                <pre className={styles.codeBlock}>{cartProgressPasteCode}</pre>
+
+                <div className={styles.setupActions}>
+                  <a
+                    href="shopify:admin/themes/current/editor?template=cart"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.buttonSecondary}
+                    style={{ textDecoration: "none", display: "inline-block" }}
+                  >
+                    Open theme editor (Cart)
+                  </a>
+                </div>
               </div>
             </>
           )}

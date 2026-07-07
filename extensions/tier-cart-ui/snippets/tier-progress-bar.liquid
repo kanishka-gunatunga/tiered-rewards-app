@@ -352,6 +352,19 @@
       }
       if (!scope) return;
 
+      const isCartDrawerScope = (element) =>
+        element instanceof HTMLElement &&
+        Boolean(
+          element.closest(
+            'cart-drawer, #CartDrawer, .cart-drawer, [data-cart-drawer], .drawer--cart',
+          ),
+        );
+
+      if (isCartDrawerScope(scope)) {
+        scope.remove();
+        return;
+      }
+
       const blockKey = scope.dataset.tierBlockId || String(blockId);
       window.__tierRewardsActiveBlockId = blockKey;
 
@@ -1313,5 +1326,13 @@
       font-size: 22px;
       line-height: 20px;
     }
+  }
+
+  cart-drawer .tier-rewards-block-v2,
+  #CartDrawer .tier-rewards-block-v2,
+  .cart-drawer .tier-rewards-block-v2,
+  [data-cart-drawer] .tier-rewards-block-v2,
+  .drawer--cart .tier-rewards-block-v2 {
+    display: none !important;
   }
 </style>

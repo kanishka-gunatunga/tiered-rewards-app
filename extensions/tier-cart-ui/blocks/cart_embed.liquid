@@ -1,57 +1,37 @@
-{% render 'tier-rewards-progress-host',
-  heading: block.settings.heading,
-  margin_top: block.settings.margin_top,
-  margin_bottom: block.settings.margin_bottom,
-  block_id: block.id,
-  shopify_attributes: block.shopify_attributes
-%}
+{%- comment -%}
+  Keeps the full progress bar out of the cart drawer.
+  Use the "Tier rewards progress" section block on the cart page instead.
+  The cart drawer already shows the applied tier discount in the subtotal area.
+{%- endcomment -%}
 <script>
   (() => {
-    const scope = document.querySelector('[data-tier-rewards][data-tier-block-id="{{ block.id }}"]');
-    if (!scope) return;
-    const target = document.querySelector('form[action="/cart"], .cart__contents, .cart-items, main .page-width');
-    if (!target || target.contains(scope)) return;
-    const styleEl = document.getElementById('tier-rewards-styles-{{ block.id }}');
-    const fragment = document.createDocumentFragment();
-    if (styleEl) fragment.appendChild(styleEl);
-    fragment.appendChild(scope);
-    target.prepend(fragment);
+    if (window.__tierRewardsDrawerGuard) return;
+    window.__tierRewardsDrawerGuard = true;
+
+    const stripProgressFromDrawer = () => {
+      document
+        .querySelectorAll(
+          'cart-drawer [data-tier-rewards], #CartDrawer [data-tier-rewards], .cart-drawer [data-tier-rewards], [data-cart-drawer] [data-tier-rewards]',
+        )
+        .forEach((element) => element.remove());
+    };
+
+    stripProgressFromDrawer();
+    document.addEventListener("DOMContentLoaded", stripProgressFromDrawer);
+    ["cart:updated", "cart:refresh", "theme:cart:change", "theme:cart:update", "tier-rewards:refresh"].forEach(
+      (eventName) => document.addEventListener(eventName, stripProgressFromDrawer),
+    );
   })();
 </script>
 
 {% schema %}
 {
-  "name": "Cart rewards embed",
+  "name": "Cart drawer guard",
   "target": "body",
-  "enabled_on": {
-    "templates": ["cart"]
-  },
   "settings": [
     {
-      "type": "text",
-      "id": "heading",
-      "label": "Heading",
-      "default": "Unlock More Savings!"
-    },
-    {
-      "type": "range",
-      "id": "margin_top",
-      "label": "Margin top",
-      "min": 0,
-      "max": 80,
-      "step": 4,
-      "unit": "px",
-      "default": 0
-    },
-    {
-      "type": "range",
-      "id": "margin_bottom",
-      "label": "Margin bottom",
-      "min": 0,
-      "max": 80,
-      "step": 4,
-      "unit": "px",
-      "default": 16
+      "type": "paragraph",
+      "content": "Prevents the cart progress bar from appearing inside the cart drawer. On the cart page, add the \"Cart tier progress\" block to your cart items section (below the page title, above line items)."
     }
   ]
 }
