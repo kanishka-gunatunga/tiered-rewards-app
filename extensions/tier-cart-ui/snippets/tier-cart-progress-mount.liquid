@@ -1,0 +1,53 @@
+{%- comment -%}
+  Moves the CartQuest progress bar into [data-cartquest-cart-progress] placeholders.
+  Requires the cart progress paste app embed to be enabled on the cart template.
+{%- endcomment -%}
+<style>
+  [data-cartquest-cart-progress] {
+    display: block;
+    margin-bottom: 24px;
+  }
+</style>
+<script>
+  (() => {
+    if (window.__cartQuestProgressMount) return;
+    window.__cartQuestProgressMount = true;
+
+    const mount = () => {
+      const source = document.getElementById("cartquest-progress-source");
+      if (!source) return;
+
+      const targets = Array.from(
+        document.querySelectorAll("[data-cartquest-cart-progress]"),
+      ).filter(
+        (node) =>
+          !node.closest(
+            'cart-drawer, #CartDrawer, .cart-drawer, [data-cart-drawer], .drawer--cart',
+          ),
+      );
+
+      if (!targets.length) {
+        source.remove();
+        return;
+      }
+
+      const widget = source.querySelector("[data-tier-rewards]");
+      if (!widget) {
+        source.remove();
+        return;
+      }
+
+      const styles = source.querySelector('style[id^="tier-rewards-styles"]');
+      const target = targets[0];
+      target.replaceChildren(widget);
+      if (styles) target.appendChild(styles);
+      source.remove();
+    };
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", mount, { once: true });
+    } else {
+      mount();
+    }
+  })();
+</script>

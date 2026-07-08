@@ -33,7 +33,7 @@
   <div class="tr-header">
     <div class="tr-left">
       <h3 class="tr-title">{{ heading }}</h3>
-      <p class="tr-cart-text" data-tier-cart-text>Current cart: {{ cart.total_price | money }}</p>
+      <p class="tr-cart-text" data-tier-cart-text>Current cart: {{ cart_subtotal_cents | money }}</p>
     </div>
     <div class="tr-center">
       <p class="tr-earned-line">
@@ -252,18 +252,29 @@
 
       window.__tierRewardsFrozenEarned = {};
 
+      const readSubtotal = (data) => {
+        if (!data || typeof data !== "object") return null;
+        if (Array.isArray(data.items) && data.items.length > 0) {
+          const fromOriginal = data.items.reduce((sum, item) => {
+            const lineTotal = Number(item.original_line_price ?? item.line_price ?? 0);
+            return sum + (Number.isFinite(lineTotal) ? lineTotal : 0);
+          }, 0);
+          if (fromOriginal > 0) return fromOriginal;
+        }
+        const itemsSubtotal = Number(data.items_subtotal_price ?? data.total_price);
+        const totalDiscount = Number(data.total_discount || 0);
+        if (Number.isFinite(itemsSubtotal) && Number.isFinite(totalDiscount) && totalDiscount > 0) {
+          return itemsSubtotal + totalDiscount;
+        }
+        return Number.isFinite(itemsSubtotal) ? itemsSubtotal : null;
+      };
+
       if (!window.__tierRewardsNetworkHooked) {
         window.__tierRewardsNetworkHooked = true;
         const isCartUrl = (url) =>
           url &&
           (/\/cart(\/(add|change|update|clear)(\.js)?|\.js)(\?|$)/i.test(String(url)) ||
             /\/cart\?/i.test(String(url)));
-
-        const readSubtotal = (data) => {
-          if (!data || typeof data !== "object") return null;
-          const n = Number(data.items_subtotal_price ?? data.total_price);
-          return Number.isFinite(n) ? n : null;
-        };
 
         const snapshotAll = () => {
           document.querySelectorAll("[data-tier-rewards]").forEach((el) => {
@@ -684,9 +695,7 @@
       let lastKnownSubtotal = defaultSubtotal;
 
       const readCartSubtotal = (cartData) => {
-        const subtotal = Number(
-          cartData?.items_subtotal_price ?? cartData?.total_price ?? lastKnownSubtotal,
-        );
+        const subtotal = readSubtotal(cartData);
         return Number.isFinite(subtotal) ? subtotal : lastKnownSubtotal;
       };
 
@@ -1295,16 +1304,33 @@
       padding: 16px 14px 14px;
     }
     .tier-rewards-block-v2 .tr-header {
-      grid-template-columns: 1fr;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
       min-height: 0;
-      gap: 10px;
+      margin-bottom: 4px;
     }
     .tier-rewards-block-v2 .tr-left {
       max-width: none;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 12px;
+    }
+    .tier-rewards-block-v2 .tr-title {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .tier-rewards-block-v2 .tr-cart-text {
+      flex: 1 1 100%;
+      margin-top: 0;
     }
     .tier-rewards-block-v2 .tr-right {
-      justify-content: flex-start;
-      grid-column: 1;
+      justify-content: flex-end;
+      flex: 0 0 auto;
+      order: -1;
+      margin-left: auto;
     }
     .tier-rewards-block-v2 .tr-center {
       position: static;
@@ -1313,18 +1339,160 @@
       width: 100%;
       max-width: none;
       pointer-events: auto;
+      order: 2;
     }
     .tier-rewards-block-v2 .tr-earned-line {
       text-align: center;
-      font-size: 24px;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+    .tier-rewards-block-v2 .tr-earned-pill {
+      padding: 7px 12px;
+    }
+    .tier-rewards-block-v2 .tr-earned-pill-text {
+      font-size: 16px;
+      line-height: 1.2;
+    }
+    .tier-rewards-block-v2 .tr-pill-icon {
+      width: 14px;
+      height: 14px;
+    }
+    .tier-rewards-block-v2 .tr-pill-icon svg {
+      width: 14px;
+      height: 14px;
+    }
+    .tier-rewards-block-v2 .tr-milestones {
+      margin-top: 10px;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+    .tier-rewards-block-v2 .tr-milestone {
+      min-width: 0;
+      flex: 1 1 0;
+    }
+    .tier-rewards-block-v2 .tr-milestone-icon {
+      width: 40px;
+      height: 40px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge {
+      width: 36px;
+      height: 36px;
+      border-width: 4px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge--next {
+      width: 40px;
+      height: 40px;
+      border-width: 5px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge--next svg {
+      width: 18px;
+      height: 18px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-money {
+      font-size: 14px;
+      line-height: 1.3;
+    }
+    .tier-rewards-block-v2 .tr-milestone-off-green,
+    .tier-rewards-block-v2 .tr-milestone-off-orange {
+      font-size: 13px;
+      line-height: 1.3;
     }
     .tier-rewards-block-v2 .tr-track {
-      height: 18px;
+      height: 16px;
+    }
+    .tier-rewards-block-v2 .tr-cta {
+      margin: 14px 0 12px;
+      font-size: 18px;
+      line-height: 1.35;
+    }
+    .tier-rewards-block-v2 .tr-cta-accent {
+      font-size: 18px;
+      line-height: 1.35;
+    }
+    .tier-rewards-block-v2 .tr-next-up {
+      gap: 4px;
+    }
+    .tier-rewards-block-v2 .tr-next-muted,
+    .tier-rewards-block-v2 .tr-next-strong,
+    .tier-rewards-block-v2 .tr-next-accent {
+      font-size: 13px;
+      line-height: 1.35;
+    }
+  }
+  @media (max-width: 640px) {
+    .tier-rewards-block-v2 {
+      padding: 14px 12px 12px;
+      border-radius: 14px;
+    }
+    .tier-rewards-block-v2 .tr-title {
+      font-size: 18px;
+      line-height: 1.3;
+    }
+    .tier-rewards-block-v2 .tr-cart-text {
+      font-size: 14px;
+      line-height: 1.35;
+    }
+    .tier-rewards-block-v2 .tr-center {
+      display: none;
+    }
+    .tier-rewards-block-v2 .tr-earned-pill-text {
+      font-size: 14px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-icon {
+      width: 34px;
+      height: 34px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge {
+      width: 30px;
+      height: 30px;
+      border-width: 3px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge--current::after {
+      width: 10px;
+      height: 10px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge--next {
+      width: 34px;
+      height: 34px;
+      border-width: 4px;
+      padding: 0 4px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-badge--next svg {
+      width: 16px;
+      height: 16px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-money {
+      font-size: 12px;
+    }
+    .tier-rewards-block-v2 .tr-milestone-off-green,
+    .tier-rewards-block-v2 .tr-milestone-off-orange {
+      font-size: 11px;
+    }
+    .tier-rewards-block-v2 .tr-track {
+      height: 14px;
     }
     .tier-rewards-block-v2 .tr-cta,
     .tier-rewards-block-v2 .tr-cta-accent {
-      font-size: 22px;
-      line-height: 20px;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+  }
+  @media (max-width: 480px) {
+    .tier-rewards-block-v2 .tr-left {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .tier-rewards-block-v2 .tr-right {
+      order: 0;
+      margin-left: 0;
+      align-self: flex-start;
+    }
+    .tier-rewards-block-v2 .tr-milestones {
+      margin-top: 8px;
+    }
+    .tier-rewards-block-v2 .tr-cta,
+    .tier-rewards-block-v2 .tr-cta-accent {
+      font-size: 14px;
     }
   }
 

@@ -1,0 +1,55 @@
+{%- liquid
+  assign mount_heading = block.settings.heading
+  assign mount_margin_top = block.settings.margin_top
+  assign mount_margin_bottom = block.settings.margin_bottom
+-%}
+
+<div id="cartquest-progress-source" hidden aria-hidden="true">
+  {% render 'tier-rewards-progress-host',
+    heading: mount_heading,
+    margin_top: mount_margin_top,
+    margin_bottom: mount_margin_bottom,
+    block_id: block.id,
+    shopify_attributes: ''
+  %}
+</div>
+
+{% render 'tier-cart-progress-mount' %}
+
+{% schema %}
+{
+  "name": "Cart progress paste",
+  "target": "body",
+  "enabled_on": {
+    "templates": ["cart"]
+  },
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Unlock More Savings!"
+    },
+    {
+      "type": "range",
+      "id": "margin_top",
+      "label": "Margin top",
+      "min": 0,
+      "max": 80,
+      "step": 4,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "margin_bottom",
+      "label": "Margin bottom",
+      "min": 0,
+      "max": 80,
+      "step": 4,
+      "unit": "px",
+      "default": 24
+    }
+  ]
+}
+{% endschema %}

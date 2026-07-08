@@ -55,12 +55,7 @@ export default function TierSettingsPage() {
     checkoutDiscountActive: loaderCheckoutDiscountActive,
   } = loaderData;
 
-  const cartProgressPasteCode = `{% comment %} CartQuest: paste under "Your cart", before the product list {% endcomment %}
-{% for block in section.blocks %}
-  {% if block.type == '@app' %}
-    {% render block %}
-  {% endif %}
-{% endfor %}`;
+  const cartProgressPasteCode = `<div data-cartquest-cart-progress style="display:block;margin-bottom:24px;"></div>`;
 
   const savedConfig = actionData?.ok ? actionData.config : loaderConfig;
   const formRows =
@@ -183,32 +178,42 @@ export default function TierSettingsPage() {
                 <div className={styles.statusCardHeader}>
                   <h3 className={styles.statusCardTitle}>Cart page progress bar</h3>
                 </div>
-                <p className={styles.statusCardBody} style={{ marginBottom: "12px" }}>
-                  Show the tier progress bar on your cart page — under the page
-                  title and above the product list.
+                <p className={styles.statusCardBody} style={{ marginBottom: "16px" }}>
+                  Pick one setup below. Do not use both on the same cart page.
                 </p>
 
-                <p className={styles.setupSubtitle}>Theme editor (usual way)</p>
+                <p className={styles.setupSubtitle}>Option A — Theme editor (no code)</p>
                 <ol className={styles.setupSteps}>
                   <li>Online Store → Themes → <strong>Customize</strong></li>
                   <li>Open the <strong>Cart</strong> page</li>
-                  <li>Click your <strong>cart items</strong> section in the sidebar</li>
-                  <li>
-                    <strong>Add block</strong> → <strong>Apps</strong> →{" "}
-                    <strong>Cart tier progress</strong>
-                  </li>
-                  <li>Drag it above the product list, then click <strong>Save</strong></li>
+                  <li>Select your cart items section → <strong>Add block</strong> → <strong>Apps</strong></li>
+                  <li>Choose <strong>Cart tier progress</strong> and place it above the product list</li>
+                  <li>Click <strong>Save</strong></li>
                 </ol>
 
-                <p className={styles.setupSubtitle}>Theme code (optional)</p>
-                <p className={styles.statusCardBody} style={{ marginBottom: "8px" }}>
-                  Use this only if you need the bar in an exact spot inside your cart
-                  section file. Paste the code below where it should appear (usually
-                  right after the &quot;Your cart&quot; heading). Then add the{" "}
-                  <strong>Cart tier progress</strong> block in the theme editor as
-                  above.
-                </p>
+                <p className={styles.setupSubtitle}>Option B — Paste in theme code</p>
+                <ol className={styles.setupSteps}>
+                  <li>
+                    Customize → <strong>Theme settings</strong> → <strong>App embeds</strong> → turn on{" "}
+                    <strong>Cart progress paste</strong>
+                  </li>
+                  <li>
+                    Online Store → Themes → <strong>Edit code</strong> → open your cart section file (often{" "}
+                    <code>sections/main-cart-items.liquid</code>)
+                  </li>
+                  <li>
+                    Paste this line where the bar should appear (above the product list, outside any{" "}
+                    <code>&lt;table&gt;</code>):
+                  </li>
+                </ol>
                 <pre className={styles.codeBlock}>{cartProgressPasteCode}</pre>
+                <ol className={styles.setupSteps} start={4}>
+                  <li>Save the theme file</li>
+                </ol>
+                <p className={styles.statusCardMeta}>
+                  Also enable <strong>Cart drawer guard</strong> under App embeds so the bar does not appear
+                  inside the cart drawer.
+                </p>
 
                 <div className={styles.setupActions}>
                   <a
@@ -219,6 +224,15 @@ export default function TierSettingsPage() {
                     style={{ textDecoration: "none", display: "inline-block" }}
                   >
                     Open theme editor (Cart)
+                  </a>
+                  <a
+                    href="shopify:admin/themes/current/editor?context=apps"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.buttonSecondary}
+                    style={{ textDecoration: "none", display: "inline-block" }}
+                  >
+                    Open app embeds
                   </a>
                 </div>
               </div>

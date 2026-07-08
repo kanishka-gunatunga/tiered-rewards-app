@@ -1,0 +1,162 @@
+{%- comment -%}
+  Shows cart-level tier discounts as a separate order discount line.
+  Place this block in the cart footer / totals area so shoppers see the
+  reward as an order discount instead of only as a product sale price.
+{%- endcomment -%}
+{%- liquid
+  assign rewards_entry = shop.metaobjects['$app:tier_rewards_config'].active
+  assign rewards_enabled = false
+
+  if rewards_entry
+    if rewards_entry.enabled.value == true or rewards_entry.enabled.value == 'true'
+      assign rewards_enabled = true
+    endif
+  endif
+-%}
+
+{% if rewards_enabled and cart.total_discount > 0 %}
+  <div class="tr-cart-discount-summary" data-tier-cart-discount-summary {{ block.shopify_attributes }}>
+    {% if cart.cart_level_discount_applications.size > 0 %}
+      {% for discount_application in cart.cart_level_discount_applications %}
+        <div class="tr-cart-discount-row">
+          <span class="tr-cart-discount-label">{{ discount_application.title }}</span>
+          <span class="tr-cart-discount-amount">-{{ discount_application.total_allocated_amount | money }}</span>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="tr-cart-discount-row">
+        <span class="tr-cart-discount-label">{{ block.settings.label | default: 'CartQuest tier reward' }}</span>
+        <span class="tr-cart-discount-amount">-{{ cart.total_discount | money }}</span>
+      </div>
+    {% endif %}
+  </div>
+
+  <style>
+    .tr-cart-discount-summary {
+      margin: 12px 0;
+      padding: 0;
+    }
+    .tr-cart-discount-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-family: Inter, sans-serif;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #364153;
+    }
+    .tr-cart-discount-label {
+      font-weight: 500;
+    }
+    .tr-cart-discount-amount {
+      font-weight: 600;
+      color: #2c8d2c;
+      white-space: nowrap;
+    }
+    @media (max-width: 640px) {
+      .tr-cart-discount-row {
+        font-size: 13px;
+      }
+    }
+  </style>
+
+  <script>
+    (() => {
+      if (window.__tierCartDiscountSummaryHooked) return;
+      window.__tierCartDiscountSummaryHooked = true;
+
+      const formatMoney = (cents, currency = {{ cart.currency.iso_code | json }}) => {
+        const amount = Number(cents || 0) / 100;
+        try {
+          return new Intl.NumberFormat(undefined, {
+            style: "currency",
+            currency,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(amount);
+        } catch {
+          return `$${amount.toFixed(2)}`;
+        }
+      };
+
+      const fallbackLabel = {{ block.settings.label | default: 'CartQuest tier reward' | json }};
+
+      const renderSummary = (root, cartData) => {
+        const totalDiscount = Number(cartData?.total_discount || 0);
+        if (!root || totalDiscount <= 0) {
+          if (root) root.hidden = true;
+          return;
+        }
+
+        root.hidden = false;
+        const applications = Array.isArray(cartData?.cart_level_discount_applications)
+          ? cartData.cart_level_discount_applications
+          : [];
+
+        if (applications.length > 0) {
+          root.innerHTML = applications
+            .map(
+              (discount) => `
+                <div class="tr-cart-discount-row">
+                  <span class="tr-cart-discount-label">${discount.title || fallbackLabel}</span>
+                  <span class="tr-cart-discount-amount">-${formatMoney(discount.total_allocated_amount, cartData.currency)}</span>
+                </div>
+              `,
+            )
+            .join("");
+          return;
+        }
+
+        root.innerHTML = `
+          <div class="tr-cart-discount-row">
+            <span class="tr-cart-discount-label">${fallbackLabel}</span>
+            <span class="tr-cart-discount-amount">-${formatMoney(totalDiscount, cartData.currency)}</span>
+          </div>
+        `;
+      };
+
+      const refreshAll = async () => {
+        try {
+          const response = await fetch("/cart.js", {
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: { Accept: "application/json" },
+          });
+          if (!response.ok) return;
+          const cartData = await response.json();
+          document.querySelectorAll("[data-tier-cart-discount-summary]").forEach((root) => {
+            renderSummary(root, cartData);
+          });
+        } catch {
+          /* ignore */
+        }
+      };
+
+      ["cart:updated", "cart:refresh", "theme:cart:change", "theme:cart:update", "tier-rewards:refresh"].forEach(
+        (eventName) => document.addEventListener(eventName, refreshAll),
+      );
+      document.addEventListener("DOMContentLoaded", refreshAll);
+      refreshAll();
+    })();
+  </script>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Cart tier discount line",
+  "target": "section",
+  "enabled_on": {
+    "templates": ["cart"]
+  },
+  "settings": [
+    {
+      "type": "text",
+      "id": "label",
+      "label": "Discount label",
+      "default": "CartQuest tier reward",
+      "info": "Shown when the theme does not expose a cart-level discount title."
+    }
+  ]
+}
+{% endschema %}

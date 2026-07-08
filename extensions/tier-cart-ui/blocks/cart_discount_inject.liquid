@@ -1,0 +1,144 @@
+{%- comment -%}
+  Auto-injects a cart-level tier discount row into cart drawer and cart page
+  totals when a tier reward is active.
+{%- endcomment -%}
+{%- liquid
+  assign rewards_entry = shop.metaobjects['$app:tier_rewards_config'].active
+  assign rewards_enabled = false
+
+  if rewards_entry
+    if rewards_entry.enabled.value == true or rewards_entry.enabled.value == 'true'
+      assign rewards_enabled = true
+    endif
+  endif
+-%}
+
+{% if rewards_enabled %}
+  <script>
+    (() => {
+      if (window.__tierCartDiscountInjectHooked) return;
+      window.__tierCartDiscountInjectHooked = true;
+
+      const LABEL = {{ block.settings.label | default: 'CartQuest tier reward' | json }};
+      const CURRENCY = {{ cart.currency.iso_code | json }};
+
+      const formatMoney = (cents) => {
+        const amount = Number(cents || 0) / 100;
+        try {
+          return new Intl.NumberFormat(undefined, {
+            style: "currency",
+            currency: CURRENCY,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(amount);
+        } catch {
+          return `$${amount.toFixed(2)}`;
+        }
+      };
+
+      const TOTAL_SELECTORS = [
+        ".cart__footer .totals",
+        ".cart-footer .totals",
+        ".cart__blocks .totals",
+        ".cart-drawer__footer .totals",
+        "#CartDrawer .cart-drawer__footer",
+        "cart-drawer .cart-drawer__footer",
+        ".drawer__footer .cart__ctas",
+        ".cart__footer",
+        ".cart-footer",
+      ];
+
+      const findTotalsHost = () => {
+        for (const selector of TOTAL_SELECTORS) {
+          const host = document.querySelector(selector);
+          if (host) return host;
+        }
+        return null;
+      };
+
+      const ensureRow = (host) => {
+        let row = host.querySelector("[data-tier-cart-discount-inject]");
+        if (!row) {
+          row = document.createElement("div");
+          row.setAttribute("data-tier-cart-discount-inject", "");
+          row.style.cssText =
+            "display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 10px;font-family:Inter,sans-serif;font-size:14px;line-height:1.4;color:#364153;";
+          const subtotal = host.querySelector(
+            ".totals__subtotal, .cart__subtotal, [data-cart-subtotal], .subtotal",
+          );
+          if (subtotal?.parentElement) {
+            subtotal.parentElement.insertAdjacentElement("afterend", row);
+          } else {
+            host.prepend(row);
+          }
+        }
+        return row;
+      };
+
+      const render = async () => {
+        try {
+          const response = await fetch("/cart.js", {
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: { Accept: "application/json" },
+          });
+          if (!response.ok) return;
+          const cartData = await response.json();
+          const totalDiscount = Number(cartData?.total_discount || 0);
+          const host = findTotalsHost();
+          if (!host) return;
+
+          const row = ensureRow(host);
+          if (totalDiscount <= 0) {
+            row.hidden = true;
+            return;
+          }
+
+          const applications = Array.isArray(cartData?.cart_level_discount_applications)
+            ? cartData.cart_level_discount_applications
+            : [];
+          const title =
+            applications[0]?.title ||
+            applications[0]?.discount_application?.title ||
+            LABEL;
+          const amount = applications[0]?.total_allocated_amount || totalDiscount;
+
+          row.hidden = false;
+          row.innerHTML = `
+            <span style="font-weight:500">${title}</span>
+            <span style="font-weight:600;color:#2c8d2c;white-space:nowrap">-${formatMoney(amount)}</span>
+          `;
+        } catch {
+          /* ignore */
+        }
+      };
+
+      const queueRender = () => window.setTimeout(render, 120);
+
+      ["cart:updated", "cart:refresh", "theme:cart:change", "theme:cart:update", "tier-rewards:refresh"].forEach(
+        (eventName) => document.addEventListener(eventName, queueRender),
+      );
+      document.addEventListener("DOMContentLoaded", queueRender);
+      queueRender();
+    })();
+  </script>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Cart discount line inject",
+  "target": "body",
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Automatically adds a cart-level tier discount row near the cart subtotal/checkout area (cart page and drawer). Enable this if your theme only shows the reward as a product sale price."
+    },
+    {
+      "type": "text",
+      "id": "label",
+      "label": "Discount label",
+      "default": "CartQuest tier reward"
+    }
+  ]
+}
+{% endschema %}
