@@ -1,94 +1,588 @@
-# CartQuest — full guide from here to Shopify App Store review
+# CartQuest — Submit to Shopify App Store (beginner guide)
 
-You are at the right milestone: **OAuth works**, the install screen loads, and “needs Shopify review” on a normal store is **expected**. This guide walks you through everything until you click **Submit for review**.
+This is your **step-by-step path from “testing is done” → click Submit for review**.
 
----
+You do **not** need to be a Shopify expert. Follow the phases **in order**. Do not skip Phase A (billing) or Phase B (listing + privacy).
 
-## Where you are now
+Official Shopify docs (bookmark these):
 
-| Done | Not done yet |
-|------|----------------|
-| App hosted at `https://shopify.ktcloud365.com` | Full test on a **development store** |
-| OAuth redirect fixed (IIS) | Production URL sync in Shopify config files |
-| Install page reachable | App Store listing + privacy policy |
-| Compliance webhooks in code | Billing switched out of test mode |
-| | Screenshots, demo video, reviewer instructions |
+- [Submit your app for review](https://shopify.dev/docs/apps/launch/app-store-review/submit-app-for-review)
+- [App Store requirements](https://shopify.dev/docs/apps/launch/shopify-app-store/app-store-requirements)
+- [About app billing](https://shopify.dev/docs/apps/launch/billing)
 
 ---
 
-## Overview — 6 phases
+## Where you are right now
 
-```
-Phase 1  Finish production setup          (1–2 days)
-Phase 2  Test on development store        (2–3 days)
-Phase 3  Fix app before review            (1–2 days)
-Phase 4  Prepare App Store listing         (2–4 days)
-Phase 5  Final pre-submission testing     (1 day)
-Phase 6  Submit for review                (1 click, then wait)
-```
+| Done (you already tested this) | Still needed before submit |
+|--------------------------------|----------------------------|
+| Production app at `https://shopify.ktcloud365.com` | Switch billing to **production** (`isTest: false`) |
+| Install + OAuth + billing approval (test charges) | Privacy policy on a **public URL** |
+| Save & activate settings | App Store listing (icon, screenshots, video, copy) |
+| Checkout tier discounts work | Reviewer testing instructions |
+| Theme progress bar / embeds work | One final fresh reinstall test |
+| Uninstall / reinstall handled | Click **Submit for review** |
+| Discount-inject bugs fixed | |
 
-Do them **in order**. Do not submit before Phase 5 is complete.
+**Goal:** finish the right column as fast as possible without rushing past Shopify’s requirements.
 
 ---
 
-# Phase 1 — Finish production setup
+## Big picture — 5 phases from here
 
-## 1.1 Sync app URLs to Shopify (CLI deploy)
-
-Shopify no longer has a Partner Dashboard **Configuration** page for App URL and redirect URLs. Those values are managed through **app versions** in the [Dev Dashboard](https://dev.shopify.com/dashboard) (CartQuest → **Versions**).
-
-The recommended way to set them is to update your local TOML and deploy:
-
-**Files to update** (both should use the production domain):
-
-- `shopify.app.toml`
-- `shopify.app.cart-tier-rewards-public.toml`
-
-```toml
-application_url = "https://shopify.ktcloud365.com"
-
-[auth]
-redirect_urls = [
-  "https://shopify.ktcloud365.com/auth/callback",
-  "https://shopify.ktcloud365.com/auth/shopify/callback",
-  "https://shopify.ktcloud365.com/api/auth/callback"
-]
+```
+Phase A  Make the app review-ready in code     (~1–2 hours)
+Phase B  Privacy + App Store listing assets    (~1–2 days)
+Phase C  Fill Partner Dashboard listing        (~2–4 hours)
+Phase D  Final “act like a Shopify reviewer”   (~1–2 hours)
+Phase E  Submit for review                     (~30 minutes)
 ```
 
-On your **local machine** (where Shopify CLI is logged in):
+**Suggested ASAP timeline**
 
-```bash
+| When | What |
+|------|------|
+| **Today** | Phase A (billing + homepage + deploy) |
+| **Today / tomorrow** | Phase B (privacy page + screenshots + short video) |
+| **Tomorrow** | Phase C (paste everything into Partner Dashboard) |
+| **Next morning** | Phase D (fresh reinstall test) |
+| **Same day** | Phase E (submit) |
+
+---
+
+# Phase A — Make the app review-ready (code)
+
+Shopify will reject apps that still use **test billing**. This is the #1 blocker for you right now.
+
+## A1. Turn off test billing (REQUIRED)
+
+### What this means (simple)
+
+While developing, CartQuest used **test billing charges**. For App Store review and real merchants, charges must be **production billing** (`isTest: false`).
+
+Dev stores can still complete the billing approval flow for testing. Production merchants must receive real subscription charges.
+
+### Industrial-standard approach (already in code)
+
+Do **not** hardcode `isTest: true` in production. CartQuest reads an environment flag:
+
+| Environment | Setting | Result |
+|-------------|---------|--------|
+| **Production server** | Do **not** set `SHOPIFY_BILLING_TEST_MODE`, or set it to `false` | Real billing (`isTest: false`) — required for App Store |
+| **Local / temporary debugging only** | `SHOPIFY_BILLING_TEST_MODE=true` in `.env` | Test charges (`isTest: true`) |
+
+Code lives in:
+
+- `app/shopify.server.ts` → `isBillingTestMode`
+- `app/routes/app.tsx` → uses that flag for `billing.require` / `billing.request`
+
+### Production server `.env` check
+
+On `C:\inetpub\wwwroot\tiered-rewards-app\.env`:
+
+```env
+# REQUIRED for App Store / live merchants — omit this line or set false
+# SHOPIFY_BILLING_TEST_MODE=true   ← must NOT be enabled on production
+```
+
+If that variable exists and equals `true`, **delete it or set `false`**, then restart PM2.
+
+### Deploy app code to the server
+
+Copy the latest code to the server (your usual sync method), then:
+
+```powershell
+cd C:\inetpub\wwwroot\tiered-rewards-app
+npm run build
+pm2 restart cartquest --update-env
+```
+
+On your **local machine** (keeps Shopify app version / extensions in sync):
+
+```powershell
 cd d:\kodetech\tiered-rewards-app
-shopify app config use cart-tier-rewards-public
-shopify app deploy
+shopify app deploy --force
 ```
 
-This creates/releases an app version with the URLs above and deploys your **discount function** and **theme extension**.
+### Re-test billing once (do not skip)
 
-**Verify:** Dev Dashboard → **CartQuest** → **Versions** → active version shows the App URL and three redirect URLs.
-
-**Alternative (UI only):** Dev Dashboard → **Versions** → **Create version** → enter the same URLs → **Release**. Prefer CLI deploy so extensions and config stay in sync.
+1. Uninstall CartQuest from the dev store (Apps → CartQuest → Uninstall).
+2. Partner Dashboard → CartQuest → **Test on development store** → install again.
+3. Approve the billing charge when asked.
+4. Confirm Rewards settings loads and **Save & activate** still works.
+5. Confirm Admin → Discounts still shows **CartQuest Rewards** after save.
 
 ---
 
-## 1.2 Server environment variables
+## A2. Fix the public homepage (RECOMMENDED — done in code)
 
-On the server (`C:\inetpub\wwwroot\tiered-rewards-app\.env`):
+Reviewers (or curious merchants) may open:
+
+`https://shopify.ktcloud365.com/`
+
+The homepage now shows **CartQuest** branding instead of Shopify template placeholders.
+
+### What you still need to do
+
+Deploy the updated code to the server (`npm run build` + PM2 restart), then open the URL in a browser and confirm:
+
+- Title / brand shows **CartQuest**
+- No text like `[your app]` remains
+- Login form still works if you use shop-domain login
+
+---
+
+## A3. Confirm the live app version looks correct
+
+1. Open [Dev Dashboard](https://dev.shopify.com/dashboard) → **CartQuest** → **Versions**.
+2. Open the **active / released** version.
+3. Check:
+   - App URL is `https://shopify.ktcloud365.com`
+   - Redirect URLs use that same domain
+   - Compliance webhooks are present (`customers/data_request`, `customers/redact`, `shop/redact`)
+   - Extensions `tier-cart-discount` and `tier-cart-ui` are included
+
+If anything looks wrong, run `shopify app deploy --force` again from your local machine.
+
+---
+
+## A4. Phase A checklist
+
+- [ ] Production server does **not** have `SHOPIFY_BILLING_TEST_MODE=true`
+- [ ] Latest code on server (`npm run build` + PM2 restart)
+- [ ] `shopify app deploy` completed from local machine
+- [ ] Fresh install + billing approval works after the change
+- [ ] Homepage at `https://shopify.ktcloud365.com/` shows CartQuest branding (no `[your app]` placeholders)
+- [ ] Dev Dashboard active version URLs/webhooks look correct
+- [ ] Save & activate + checkout discount still work after reinstall
+
+---
+
+# Phase B — Privacy policy + listing assets
+
+You cannot submit without a **public privacy policy URL** and a complete listing. Do this even if it feels “non-code”.
+
+## B1. Create a privacy policy page (REQUIRED)
+
+### Why
+
+Shopify requires every App Store app to link to a privacy policy merchants can open without logging in.
+
+### Implemented in this app
+
+CartQuest now serves a public privacy page at:
+
+**https://shopify.ktcloud365.com/privacy.html**
+
+No Shopify login is required. The homepage also links to it.
+
+(Use `/privacy.html` — that file is copied from `public/privacy.html` on build and is served as a static page. You do not need a React route for App Store review.)
+
+### After you deploy this code to the server
+
+```powershell
+cd C:\inetpub\wwwroot\tiered-rewards-app
+npm run build
+pm2 restart cartquest --update-env
+```
+
+Then open the privacy URL in an **incognito** window and confirm it loads.
+
+### Customize contact emails (recommended)
+
+Defaults in the page:
+
+- Company: `Kode Tech`
+- Support: `support@ktcloud365.com`
+- Privacy: `privacy@ktcloud365.com`
+
+If those are wrong, set real values in production `.env` and restart PM2:
+
+```env
+COMPANY_NAME=Kode Tech
+SUPPORT_EMAIL=support@your-real-domain.com
+PRIVACY_EMAIL=privacy@your-real-domain.com
+```
+
+Use inboxes you monitor. Do **not** use emails containing the word “Shopify”.
+
+### Alternative hosts (optional)
+
+You may instead host the same policy on your company website. The App Store listing only needs one public URL.
+
+---
+
+## B2. Capture screenshots (REQUIRED — 3 to 5+)
+
+Use your **development store**. Keep the UI clean (no random test spam).
+
+Recommended set:
+
+1. **Admin — Rewards settings** with Active checkout discounts and 2 clear tiers  
+2. **Admin — Discounts** page showing **CartQuest Rewards**  
+3. **Storefront — Cart page** with progress bar visible  
+4. **Storefront — Cart** after unlocking a tier (discount visible under subtotal)  
+5. **Checkout** page showing the tier discount applied  
+
+Tips:
+
+- Use Zoom / browser zoom so text is readable
+- Prefer desktop width screenshots for Admin
+- Do not include private Partner Dashboard info or API secrets
+
+Shopify listing fields usually ask for specific sizes; follow the upload UI prompts (often large PNGs). If unsure, export high-resolution PNGs and let the dashboard crop/validate.
+
+---
+
+## B3. Record a short demo video (REQUIRED / strongly expected)
+
+**Length:** about 2–3 minutes  
+**Upload:** YouTube **Unlisted**, or Shopify’s upload field if available
+
+### Script (read this while recording)
+
+1. “This is CartQuest — tiered cart rewards for Shopify.”
+2. Install on a development store → approve billing (Premium Plan, 14-day trial).
+3. Open Apps → CartQuest → show Rewards settings.
+4. Keep or set two simple tiers → click **Save & activate** (or **Save settings** if already active).
+5. Show status **Active** for Checkout discounts.
+6. Show Admin → Discounts → **CartQuest Rewards**.
+7. Theme editor → add **Cart tier progress** on the Cart page (Option A) → Save.
+8. Storefront: add products under the first tier → no reward yet.
+9. Increase cart to unlock tier → show progress / unlocked state and discount line.
+10. Go to checkout → show discount applied.
+11. Optional: turn program off → save → confirm discount stops; turn back on.
+
+Speak slowly. Captions help if you do not want voiceover.
+
+---
+
+## B4. Prepare listing text (REQUIRED)
+
+Write these in a Notes file first, then paste into Partner Dashboard.
+
+### App name
+
+`CartQuest`
+
+### Tagline (short)
+
+`Unlock automatic cart rewards as shoppers spend more`
+
+### App category
+
+Pick the closest fit Shopify offers (often **Discounts**, **Marketing**, or **Conversion** — choose what the form allows).
+
+### Short description / intro (example)
+
+```text
+CartQuest helps merchants increase average order value with simple spend tiers.
+Shoppers unlock order discounts automatically at checkout when their cart total
+reaches each tier you set. Optionally show a progress bar on the cart page so
+customers know how close they are to the next reward.
+```
+
+### Feature bullets (example)
+
+```text
+- Create up to several spend tiers with clear discount amounts
+- Automatic checkout discounts via Shopify Functions
+- Optional cart progress bar (theme editor block — no code required for most themes)
+- Works with your shop currency
+- Simple admin: save tiers once to activate
+```
+
+### Pricing (must match code)
+
+```text
+$20 USD / month
+14-day free trial
+Plan name in app: Premium Plan
+```
+
+### Support details
+
+Prepare:
+
+- Support email (must be real and monitored)
+- Support URL (help page, FAQ, or even a simple contact page)
+- Emergency developer email + phone (Shopify asks for this separately)
+
+Do **not** use emails containing the word “Shopify”.
+
+---
+
+## B5. Phase B checklist
+
+- [ ] Privacy URL loads in incognito: `https://shopify.ktcloud365.com/privacy.html`
+- [ ] Support / privacy emails on that page are real inboxes you monitor
+- [ ] 3–5 clean screenshots ready
+- [ ] Demo video recorded + uploaded (or ready to upload)
+- [ ] Listing copy written (name, tagline, description, features, pricing)
+- [ ] Support + emergency contact details ready
+
+---
+
+# Phase C — Fill the Partner Dashboard listing
+
+This is where beginners usually get stuck. Go slowly. The dashboard saves progress.
+
+## C1. Open the submission flow
+
+1. Go to [Partner Dashboard](https://partners.shopify.com/)
+2. Open **Apps** → **CartQuest**
+3. Open **Distribution** / **Shopify App Store** / **App Store listing** (wording varies)
+4. Open the guided **App Store review** / submission page if shown
+
+Complete every red / incomplete section until nothing blocks submit.
+
+## C2. Configuration checklist inside the dashboard
+
+Fill or confirm:
+
+| Field | What to enter |
+|-------|----------------|
+| App URL | `https://shopify.ktcloud365.com` (usually via released version) |
+| App icon | 1200×1200 PNG or JPEG |
+| Compliance webhooks | Must be registered (already in your TOML / version) |
+| API / contact emails | Your company emails (no “Shopify” in the address) |
+| Emergency developer contact | Email + phone Shopify can reach urgently |
+| Privacy policy URL | The public URL from Phase B |
+| Support email / URL | From Phase B |
+| Pricing | $20 / month, 14-day trial |
+| Screenshots | Upload your set |
+| Demo video | Link or upload |
+| Testing instructions | Paste the template in C3 |
+
+Run any **automated checks** the dashboard offers. Fix failures, then re-run until green.
+
+## C3. Reviewer testing instructions (copy-paste)
+
+Paste this into **Testing instructions**. Replace the support email.
+
+```text
+CartQuest — Tiered cart rewards app
+
+OVERVIEW
+CartQuest creates automatic tiered order discounts based on cart subtotal.
+Merchants configure tiers in the embedded admin app. Discounts apply at checkout
+via a Shopify Discount Function and an automatic discount named "CartQuest Rewards".
+
+TEST STORE SETUP
+1. Install CartQuest on the provided development store.
+2. Approve the Premium Plan billing charge ($20 USD/month, 14-day trial).
+
+CONFIGURE REWARDS
+3. Open Apps → CartQuest.
+4. Confirm "Rewards program is on".
+5. Set two tiers, for example:
+   - Tier 1: Cart total $100 → $10 discount
+   - Tier 2: Cart total $200 → $25 discount
+6. Click "Save & activate" (first time) or "Save settings" (later saves).
+7. Confirm Checkout discounts status shows Active.
+8. Confirm Admin → Discounts shows automatic discount "CartQuest Rewards".
+
+STOREFRONT PROGRESS BAR (recommended visual check)
+9. Online Store → Themes → Customize → Cart page.
+10. Add block → Apps → "Cart tier progress" above the product list → Save.
+11. (Optional) Theme settings → App embeds → enable "Cart drawer guard".
+12. Do NOT enable "Cart discount line inject" on Dawn — Dawn already shows
+    cart-level discounts under the subtotal.
+13. Open the storefront cart page and confirm the progress bar appears.
+
+CHECKOUT TEST
+14. Add products totaling below $100 → checkout → no CartQuest tier discount.
+15. Increase cart to $100+ → checkout → Tier 1 discount applied.
+16. Increase cart to $200+ → checkout → Tier 2 discount applied.
+
+DISABLE TEST
+17. In CartQuest admin, turn off "Rewards program is on" → Save settings.
+18. Confirm checkout no longer applies the tier reward.
+19. Turn it back on → Save → confirm discount works again.
+
+UNINSTALL
+20. Uninstall the app. Compliance webhooks (including shop/redact) are handled.
+
+Support: support@YOUR-DOMAIN.com
+Privacy policy: https://YOUR-PRIVACY-URL
+```
+
+## C4. Protected customer data
+
+If the dashboard asks about **protected customer data**:
+
+- CartQuest’s core flow does **not** need customer PII access beyond normal Shopify checkout/discount operation.
+- If you are not requesting protected customer data scopes, choose the option to **opt out / not required**.
+- Do not request protected customer data unless you truly need it (it slows review).
+
+## C5. Phase C checklist
+
+- [ ] Listing sections complete (no red blockers)
+- [ ] Privacy + support URLs work
+- [ ] Screenshots + video attached
+- [ ] Pricing matches code
+- [ ] Testing instructions pasted
+- [ ] Automated checks passed
+
+---
+
+# Phase D — Final “act like a Shopify reviewer” test
+
+Do this **after** `isTest: false` is live. Prefer a clean uninstall/reinstall.
+
+## D1. Fresh install
+
+- [ ] Uninstall CartQuest completely
+- [ ] Install again from Partner Dashboard → Test on development store
+- [ ] Billing approval screen appears and succeeds
+- [ ] App opens Rewards settings with no Application Error
+- [ ] Check `pm2 logs cartquest` — no crash spam
+
+## D2. Activate + configure
+
+- [ ] Click **Save & activate** (or Save settings)
+- [ ] Toast success
+- [ ] Checkout discounts = Active
+- [ ] Admin → Discounts shows **CartQuest Rewards**
+
+## D3. Storefront + checkout
+
+- [ ] Add Cart tier progress via theme editor (Option A)
+- [ ] Cart drawer guard ON
+- [ ] Cart discount line inject OFF on Dawn
+- [ ] Progress bar shows on cart page
+- [ ] Below tier → no discount at checkout
+- [ ] At tier 1 / tier 2 → correct discount at checkout
+- [ ] Program off → discounts stop; program on → work again
+
+## D4. Infra sanity
+
+- [ ] `SHOPIFY_APP_URL=https://shopify.ktcloud365.com` on server `.env`
+- [ ] Homepage branding looks correct
+- [ ] Privacy URL opens in incognito
+- [ ] Active app version in Dev Dashboard looks correct
+
+If **anything** fails, fix it before Phase E. Do not submit a broken build hoping reviewers will be kind — resubmits slow you down.
+
+---
+
+# Phase E — Submit for review
+
+## E1. Submit
+
+1. Partner Dashboard → CartQuest → App Store review / Distribution
+2. Confirm every required section is complete
+3. Confirm automated checks passed
+4. Click **Submit for review** / **Manage submission** → Submit
+
+## E2. After you click Submit
+
+- Watch the submission contact email closely
+- Allow emails from `app-submissions@shopify.com` and `noreply@shopify.com`
+- Keep the server running (`pm2` healthy) — reviewers will install and test your live app
+- Do **not** deploy breaking changes mid-review unless Shopify asks for a fix
+
+## E3. What responses mean
+
+| Result | What you do |
+|--------|-------------|
+| **Approved** | Publish / list if needed; test a fresh install from the listing |
+| **Changes requested** | Read every note carefully, fix, reply, resubmit |
+| **Rejected** | Fix root issues, then resubmit with clearer testing notes if needed |
+
+Typical review time: about **1–10+ business days** (can vary).
+
+---
+
+# Nice-to-haves that help approval (do these if time allows)
+
+These are not always hard blockers, but they reduce “looks unfinished” feedback:
+
+1. **Homepage branding** (Phase A2) — do this
+2. **Clear testing instructions** matching the real UI labels — already included above
+3. **Clean screenshots** with realistic tier numbers (e.g. $100 / $10, not messy decimals)
+4. **Support page** with 5 FAQ bullets:
+   - How do I activate?
+   - Where is the discount?
+   - How do I add the progress bar?
+   - Dawn note: leave Cart discount line inject off
+   - How do I pause rewards?
+5. **App icon** that is simple, high contrast, no tiny unreadable text
+6. **Remove stale “dev preview”** on the test store if the header shows it:
+   ```powershell
+   shopify app dev clean -s YOUR-DEV-STORE.myshopify.com
+   ```
+7. Keep Partner account **emergency contact** phone accurate
+
+---
+
+# Common rejection / delay causes (avoid these)
+
+| Mistake | Fix |
+|---------|-----|
+| Billing still `isTest: true` | Phase A1 |
+| Privacy URL missing or behind login | Phase B1 |
+| Listing incomplete / placeholder copy | Phase B4 + C |
+| App crashes on install | Check PM2 logs, fix before submit |
+| Reviewer cannot find how to activate | Testing instructions must say **Save & activate** |
+| Theme setup confusing | Tell them Option A theme editor; Dawn inject OFF |
+| Support email bounces | Use a real monitored inbox |
+| Email/domain contains “Shopify” | Rename contacts |
+
+---
+
+# Quick reference — CartQuest facts for forms
+
+| Item | Value |
+|------|--------|
+| App name | CartQuest |
+| Production URL | `https://shopify.ktcloud365.com` |
+| Billing | Premium Plan — $20 USD / month — 14-day trial |
+| Checkout discount title | CartQuest Rewards |
+| Admin | Rewards settings |
+| Theme block | Cart tier progress |
+| Helpful embed | Cart drawer guard |
+| Avoid on Dawn | Cart discount line inject |
+| Scopes | `write_metaobjects`, `write_metaobject_definitions`, `write_discounts` |
+| Distribution | App Store |
+
+---
+
+# Your immediate next actions (start here)
+
+1. **Phase B1:** confirm `https://shopify.ktcloud365.com/privacy.html` loads in incognito (file already in `build/client` after build)  
+2. **Phase B2–B3:** capture screenshots + record 2–3 min demo video  
+3. **Phase B4:** finalize listing copy + real support emails  
+4. **Phase C:** complete Partner Dashboard listing  
+5. **Phase D:** final reinstall checklist  
+6. **Phase E:** submit  
+
+If you want hands-on help next in Cursor, ask for:
+
+1. A simple public Support / FAQ page  
+2. Walkthrough of Partner Dashboard listing fields while you fill them  
+3. Help reviewing your screenshots / video script before upload
+
+---
+
+# Appendix — Already completed earlier (reference only)
+
+You already finished the hard product work. Keep this only if you need to re-check production basics.
+
+### Server env (must stay correct)
 
 ```env
 SHOPIFY_APP_URL=https://shopify.ktcloud365.com
-SHOPIFY_API_KEY=<from Dev Dashboard → CartQuest → Settings, or Versions → active version>
-SHOPIFY_API_SECRET=<same location as API key>
+SHOPIFY_API_KEY=...
+SHOPIFY_API_SECRET=...
 SCOPES=write_metaobjects,write_metaobject_definitions,write_discounts
-DATABASE_URL=<postgresql connection string>
+DATABASE_URL=...
 NODE_ENV=production
+# Do NOT enable on production:
+# SHOPIFY_BILLING_TEST_MODE=true
 ```
 
-**Do not set** `SHOP_CUSTOM_DOMAIN` unless you have a real custom shop domain.
-
-**Server vs local:** `shopify app deploy` runs on your **local machine** and updates Shopify’s app version (URLs, extensions, webhooks). The running app on IIS reads **`SHOPIFY_APP_URL` from `.env`**, not from the TOML files. You do **not** need to copy the TOML files to the server for OAuth to work, but you **must** set `SHOPIFY_APP_URL=https://shopify.ktcloud365.com` in the server `.env` if it still points at the old domain. After any `.env` change, restart PM2 (below).
-
-Restart:
+Restart after `.env` changes:
 
 ```powershell
 cd C:\inetpub\wwwroot\tiered-rewards-app
@@ -96,627 +590,19 @@ pm2 restart cartquest --update-env
 pm2 save
 ```
 
----
-
-## 1.3 Database migrations
-
-If not done yet:
+### Deploy extensions / app version (local machine)
 
 ```powershell
-cd C:\inetpub\wwwroot\tiered-rewards-app
-npm run setup
-pm2 restart cartquest --update-env
-```
-
----
-
-## 1.4 Phase 1 verification checklist
-
-- [ ] Dev Dashboard → **Versions** shows App URL + redirect URLs on the active version
-- [ ] `shopify app deploy` completed without errors
-- [ ] Server `.env` has `SHOPIFY_APP_URL=https://shopify.ktcloud365.com` (see 1.2)
-- [ ] `pm2 logs cartquest` shows no crash on startup
-- [ ] PowerShell redirect test returns `admin.shopify.com`:
-
-```powershell
-try {
-  Invoke-WebRequest `
-    -Uri "https://shopify.ktcloud365.com/auth/login" `
-    -Method POST `
-    -Body "shop=example.myshopify.com" `
-    -ContentType "application/x-www-form-urlencoded" `
-    -MaximumRedirection 0 `
-    -UseBasicParsing
-} catch {
-  $_.Exception.Response.Headers["Location"]
-}
-```
-
-Expected: `https://admin.shopify.com/store/example/oauth/install?...`
-
----
-
-# Phase 2 — Test on a development store
-
-**Important:** The direct login URL on a **live/production store** will show “needs Shopify review” with install disabled. That is normal. Testing must happen on a **development store**.
-
-## 2.1 Create or pick a dev store
-
-1. [dev.shopify.com/dashboard](https://dev.shopify.com/dashboard) → **Stores** (left sidebar)
-2. Click **Create store** (or use an existing dev store)
-3. Note the store URL: `your-dev-store.myshopify.com`
-
-*(Alternative: Partner Dashboard → **Stores** → create a development store.)*
-
----
-
-## 2.2 Install CartQuest (correct method)
-
-**Important:** Do **not** run `shopify app dev` while testing the production-hosted app. With `automatically_update_urls_on_dev = true`, CLI replaces Shopify’s App URL with a temporary Cloudflare tunnel (e.g. `*.trycloudflare.com`). That breaks install/OAuth when the tunnel stops. Phase 2 testing uses your live server at `https://shopify.ktcloud365.com` only.
-
-**Use the Dev Dashboard** (Partner Dashboard no longer has a separate app Configuration / install screen for URLs):
-
-1. [dev.shopify.com/dashboard](https://dev.shopify.com/dashboard) → **Apps** → **CartQuest**
-2. On the app **Home** page, find **Installs** → click **Install app**
-3. Choose your dev store
-4. Approve permissions if prompted
-
-*(Alternative: Partner Dashboard → **Apps** → **CartQuest** → **Test on development store** — if that button is still visible.)*
-
-**Expected:** App opens **inside Shopify Admin** (embedded), not the placeholder homepage.
-
-If install fails, check `pm2 logs cartquest` immediately on the server.
-
-### Troubleshooting: `*.trycloudflare.com` DNS error on install
-
-If install redirects to a dead `*.trycloudflare.com` URL, a **dev preview** from an old `shopify app dev` session is still active on that dev store. The released app version (`cartquest-9`) is fine — the store is still using the stale preview URL.
-
-**Fix (CLI):**
-
-```bash
 cd d:\kodetech\tiered-rewards-app
-shopify app config use cart-tier-rewards-public
-shopify app dev clean -s YOUR-DEV-STORE.myshopify.com
+shopify app deploy --force
 ```
 
-Replace `YOUR-DEV-STORE` with the exact dev store you are installing on (not necessarily the store linked in CLI).
+### Known storefront note (Dawn)
 
-**Fix (Admin UI):** In the dev store’s Shopify Admin, open the **Dev Console** (appears when a dev preview exists) → **Clean dev preview**.
+- Use **Cart tier progress** via theme editor  
+- Enable **Cart drawer guard**  
+- Leave **Cart discount line inject** OFF on Dawn (theme already shows discounts)
 
-Then install again from Dev Dashboard → **Install app**.
+### Metaobject reinstall note
 
-### Troubleshooting: HTTP ERROR 431 on install
-
-**431 = request headers too large.** This usually happens on the OAuth callback to `https://shopify.ktcloud365.com/auth/...` after you click **Install app**. Common causes:
-
-1. **Too many OAuth cookies** from repeated failed install attempts (very common while debugging)
-2. **IIS default header limit** (~16 KB) is too small for Shopify embedded-app OAuth
-
-**Fix A — try first (browser, no server change):**
-
-1. Close all tabs for `shopify.ktcloud365.com`, `admin.shopify.com`, and your dev store
-2. Clear cookies for those sites **or** use a fresh **Incognito / InPrivate** window
-3. Dev Dashboard → **Install app** → pick dev store → click **Install** once (don’t retry rapidly if it fails)
-
-**Fix B — if 431 still happens in Incognito (server / IIS):**
-
-On the Windows server, run **PowerShell as Administrator**:
-
-```powershell
-New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\HTTP\Parameters" -Name "MaxFieldLength" -Value 65536 -PropertyType DWord -Force
-New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\HTTP\Parameters" -Name "MaxRequestBytes" -Value 65536 -PropertyType DWord -Force
-net stop http /y
-net start http
-iisreset
-```
-
-This raises IIS/http.sys header limits for Shopify OAuth callbacks. Ask your server admin if you don’t have admin access.
-
-**Verify after fix:** Install should complete and CartQuest opens embedded in Shopify Admin.
-
-### Troubleshooting: Application Error / `Error: Bad Request` on Save settings
-
-If logs show `Error: Bad Request` at `singleFetchAction`, React Router blocked the form POST because the request came from `admin.shopify.com` (embedded iframe) but your app only trusted its own host. Ensure `react-router.config.ts` includes:
-
-```ts
-allowedActionOrigins: ["admin.shopify.com", "shopify.ktcloud365.com"],
-```
-
-Then **`npm run build`** and restart PM2. Editing `.tsx` files alone is not enough — the server runs compiled code in `build/`.
-
----
-
-## 2.3 Billing test (required — app charges $20/month)
-
-CartQuest uses plan **“Premium Plan”**: $20 USD/month, 14-day trial.
-
-On first open, you should see a **billing approval** screen.
-
-- [ ] Billing screen appears
-- [ ] You can approve the test charge on the dev store
-- [ ] After approval, **Rewards settings** page loads
-
-If billing blocks you, the app will not load settings until approved.
-
-### Troubleshooting: Application Error when clicking Save settings
-
-The save button runs a server action (metaobject save + checkout discount sync). A blank **Application Error** means the server threw an uncaught exception.
-
-**Step 1 — check server logs (most important):**
-
-```powershell
-cd C:\inetpub\wwwroot\tiered-rewards-app
-pm2 logs cartquest --lines 80
-```
-
-Look for `[app] save settings action failed`, `[tier-rewards] metaobjectUpsert`, or `[app] discount sync failed`.
-
-**Step 2 — common fixes:**
-
-| Log message | Fix |
-|-------------|-----|
-| `431` / header too large | Clear cookies or use Incognito; apply IIS header limit fix from section 2.2 |
-| `discount sync failed` / function not found | Run `shopify app deploy` locally, then save again |
-| `metaobjectUpsert` / “No metaobject definition exists” | Shopify orphaned-handle bug after uninstall/reinstall (not a missing definition). Deploy latest app code (retries with a unique `cfg-…` handle), run `shopify app deploy`, rebuild + restart PM2, then save again. |
-| Database / Prisma error | Check `DATABASE_URL` in `.env`, run `npm run setup` |
-
-**Step 3 — deploy latest app code to server** (includes better error messages instead of Application Error):
-
-```powershell
-cd C:\inetpub\wwwroot\tiered-rewards-app
-npm run build
-pm2 restart cartquest --update-env
-```
-
-### Troubleshooting: `No metaobject definition exists for type "app--…--tier_rewards_config"`
-
-This error is **misleading**. The metaobject **definition usually exists**. After uninstall/reinstall, Shopify leaves **invisible orphaned entries** that still occupy handles like `default` or `active`. `metaobjectUpsert` then fails with “No metaobject definition exists” even though `metaobjectDefinitionByType` succeeds.
-
-**Durable fix (in latest code):** Save settings retries automatically:
-1. Update any **live** config entry already on the shop
-2. Try handle `active`
-3. If those are blocked by orphans, create a **new unique handle** (`cfg-…`)
-
-Storefront Liquid reads whatever live entry appears in `.values` (not a hardcoded handle). Checkout discounts use the **discount metafield** synced on Save (not the metaobject handle).
-
-After you deploy:
-
-1. **Locally:** `shopify app deploy` (theme extension + discount function)
-2. **On server:** `npm run build` and `pm2 restart cartquest --update-env`
-3. Hard refresh CartQuest in Admin and click **Save settings** again
-
-You can uninstall/reinstall repeatedly — Save should keep working without manual handle changes.
-
-**Also remove dev preview** if you still see “dev previews (1)” in the app header — run `shopify app dev clean -s YOUR-DEV-STORE.myshopify.com` locally.
-
----
-
-## 2.4 Admin app testing — Rewards settings
-
-Open: **Shopify Admin → Apps → CartQuest**
-
-You should see **“Rewards tiers”** / **“Rewards settings”**.
-
-### Configure test tiers (use simple numbers for testing)
-
-Example test setup:
-
-| Tier | Min spend | Discount |
-|------|-----------|----------|
-| 1 | $100 | $10 |
-| 2 | $200 | $25 |
-
-Steps:
-
-1. [ ] Toggle **Program enabled** ON
-2. [ ] Set program title (e.g. `Instant Rewards`)
-3. [ ] Add/edit tier rows
-4. [ ] Click **Save settings**
-5. [ ] Toast says **“Settings saved — checkout discount is active”**
-6. [ ] Status card shows **Checkout discounts: Active**
-7. [ ] In Admin → **Discounts**, find **“CartQuest Rewards”** automatic discount
-
-If status stays **“Setup needed”** after save:
-
-- Check `pm2 logs cartquest` for `[app] discount sync failed`
-- Re-run `shopify app deploy`
-- Save settings again
-
----
-
-## 2.5 Storefront testing — progress bar (theme extension)
-
-Use **one** cart page setup (not both):
-
-### Option A — Theme editor block (no code)
-
-1. Customize → **Cart** → cart items section → **Add block** → **Cart tier progress**
-2. Place it above the product list → **Save**
-3. App embeds → enable **Cart drawer guard**
-
-### Option B — Paste one line in theme code
-
-1. App embeds → enable **Cart progress paste** and **Cart drawer guard**
-2. Edit code → cart section file → paste above the product list (not inside a `<table>`):
-
-```html
-<div data-cartquest-cart-progress style="display:block;margin-bottom:24px;"></div>
-```
-
-3. Save the theme file
-
-Checklist:
-
-- [ ] Progress bar on cart page only (not in cart drawer)
-- [ ] Cart drawer shows discount line under subtotal
-- [ ] Widget reflects tier thresholds
-
----
-
-## 2.6 Checkout testing — discount function
-
-This is the **most important** test. Shopify reviewers will check checkout behavior.
-
-### Setup
-
-1. On dev store, add products so you can hit tier thresholds
-2. Enable a **test payment method** (Shopify Payments test mode or Bogus Gateway)
-
-### Test case A — below first tier
-
-- [ ] Cart subtotal **below** tier 1 minimum
-- [ ] Go to checkout
-- [ ] **No** CartQuest tier discount applied
-
-### Test case B — at tier 1
-
-- [ ] Cart subtotal **at or above** tier 1 minimum
-- [ ] Go to checkout
-- [ ] **CartQuest tier discount** appears
-- [ ] Discount amount matches tier 1
-
-### Test case C — at tier 2
-
-- [ ] Increase cart to tier 2 threshold
-- [ ] Checkout shows **higher** discount (tier 2)
-
-### Test case D — change settings in admin
-
-1. [ ] Change tier amounts in admin → **Save settings**
-2. [ ] New cart → checkout reflects **updated** values
-
-### Test case E — disable program
-
-1. [ ] Turn **Program enabled** OFF → Save
-2. [ ] Checkout → discount should **not** apply
-
----
-
-## 2.7 Webhook testing
-
-### Uninstall test
-
-1. [ ] Admin → **Apps** → CartQuest → **Uninstall**
-2. [ ] `pm2 logs cartquest` — no repeated crash errors
-3. [ ] Reinstall via Partner Dashboard → **Test on development store**
-
-Compliance webhooks (`customers/data_request`, `customers/redact`, `shop/redact`) are configured in your app. Shopify may test these during review; your handler already exists in `webhooks.compliance.tsx`.
-
----
-
-## 2.8 Phase 2 sign-off
-
-Do not continue until **all** of these pass on a dev store:
-
-- [ ] Install works
-- [ ] Billing approved
-- [ ] Settings save without error
-- [ ] “CartQuest Rewards” discount exists in Admin
-- [ ] Checkout discount applies correctly
-- [ ] Theme widget visible (at least one embed/block method)
-- [ ] Uninstall/reinstall works
-
----
-
-# Phase 3 — Fix app issues before review
-
-## 3.1 Switch billing out of test mode (critical)
-
-In `app/routes/app.tsx`, billing currently has:
-
-```javascript
-isTest: true, // Remove or set to false in production
-```
-
-Before App Store submission, change both occurrences to:
-
-```javascript
-isTest: false,
-```
-
-Deploy updated code to server, rebuild, restart PM2:
-
-```powershell
-npm run build
-pm2 restart cartquest --update-env
-```
-
-Re-test billing on dev store after this change.
-
----
-
-## 3.2 Customize public homepage (recommended)
-
-The page at `https://shopify.ktcloud365.com/` still shows template placeholder text. For review, update `app/routes/_index/route.ts x` with:
-
-- App name: **CartQuest**
-- Real tagline and feature descriptions
-- Link to support or docs
-
-Not strictly blocking if merchants install from App Store, but looks unprofessional to reviewers.
-
----
-
-## 3.3 Confirm extensions are deployed
-
-CartQuest uses:
-
-| Extension | Purpose |
-|-----------|---------|
-| `tier-cart-discount` | Applies tier discounts at checkout |
-| `tier-cart-ui` | Storefront progress bar / widget |
-
-Verify in Partner Dashboard → **CartQuest** → **Extensions** — both should show as deployed/active.
-
----
-
-## 3.4 Phase 3 checklist
-
-- [ ] `isTest: false` in billing
-- [ ] Code rebuilt and deployed to server
-- [ ] Extensions deployed via `shopify app deploy`
-- [ ] Homepage branding updated (recommended)
-- [ ] Re-tested install + checkout after billing change
-
----
-
-# Phase 4 — Prepare App Store listing
-
-Go to Partner Dashboard → **CartQuest** → **App Store listing** / **Distribution**.
-
-## 4.1 Required listing content
-
-| Item | What to write / prepare |
-|------|-------------------------|
-| **App name** | CartQuest |
-| **App icon** | 1200×1200 px PNG, no text-heavy icon |
-| **Tagline** | Short one-liner (e.g. “Tiered cart rewards that grow with spend”) |
-| **App description** | What it does, who it’s for, key benefits |
-| **Feature list** | Tiered discounts, checkout auto-apply, storefront progress bar |
-| **Pricing** | $20/month with 14-day free trial (matches your billing config) |
-| **App category** | Discounts / Marketing (pick best fit) |
-| **Screenshots** | At least 3–5 (see below) |
-| **Demo screencast** | 2–3 min video (see below) |
-| **Support email** | e.g. `support@yourcompany.com` |
-| **Support URL** | Help/docs page |
-| **Privacy policy URL** | **Required** — public page |
-| **Emergency developer email** | Required by Shopify |
-| **Testing instructions** | For reviewers (template below) |
-
----
-
-## 4.2 Screenshots to capture
-
-Take these from your **dev store**:
-
-1. **Rewards settings** page in Admin (tiers configured)
-2. **Checkout discounts: Active** status card
-3. **Discounts** page showing “CartQuest Rewards”
-4. **Storefront cart** with progress bar/widget
-5. **Checkout** showing applied tier discount
-
-Use clean test data. No lorem ipsum.
-
----
-
-## 4.3 Demo screencast outline (2–3 minutes)
-
-Record screen + voice (or captions):
-
-1. Install CartQuest on dev store
-2. Approve billing
-3. Configure 2 tiers → Save
-4. Show “CartQuest Rewards” in Discounts
-5. Enable theme embed → show cart progress bar
-6. Add products → checkout → discount applied
-7. (Optional) Change tier → show updated discount
-
-Upload to YouTube (unlisted) or Shopify’s upload field.
-
----
-
-## 4.4 Privacy policy (required)
-
-Host a public page. Minimum content for CartQuest:
-
-- **What data you collect:** shop domain, app session tokens, tier configuration (stored in Shopify metaobjects)
-- **What you do NOT collect:** customer PII (your compliance webhook handler states you don’t store customer-specific data)
-- **How data is stored:** PostgreSQL for app sessions; Shopify metaobjects for tier config
-- **Data retention:** sessions deleted on uninstall (`shop/redact` webhook)
-- **Contact email** for privacy questions
-- **GDPR:** you respond to Shopify compliance webhooks
-
-Example URL: `https://yourcompany.com/cartquest/privacy` or a simple page on your site.
-
----
-
-## 4.5 Reviewer testing instructions (copy-paste template)
-
-Customize and paste into Partner Dashboard → **Testing instructions**:
-
-```
-CartQuest — Tiered cart rewards app
-
-TEST STORE SETUP:
-1. Install CartQuest on the provided development store.
-2. Approve the Premium Plan billing charge ($20/month, 14-day trial).
-
-CONFIGURE REWARDS:
-3. Open Apps → CartQuest.
-4. Enable "Program enabled".
-5. Set two tiers, for example:
-   - Tier 1: Min spend $100 → $10 discount
-   - Tier 2: Min spend $200 → $25 discount
-6. Click "Save settings".
-7. Confirm status shows "Checkout discounts: Active".
-8. Confirm Admin → Discounts shows automatic discount "CartQuest Rewards".
-
-STOREFRONT (optional visual):
-9. Online Store → Themes → Customize.
-10. Enable "Cart rewards embed" under App embeds (or add "Tier rewards progress" block to Cart template).
-11. View cart page — progress bar should appear.
-
-CHECKOUT TEST:
-12. Add products totaling below $100 → checkout → no tier discount.
-13. Add products totaling $100+ → checkout → tier 1 discount applied.
-14. Increase cart to $200+ → checkout → tier 2 discount applied.
-
-UNINSTALL:
-15. Uninstall app — app handles shop/redact compliance webhook.
-
-Support contact: support@YOUR-DOMAIN.com
-```
-
----
-
-## 4.6 Phase 4 checklist
-
-- [ ] App icon ready
-- [ ] 3–5 screenshots captured
-- [ ] Demo video recorded and uploaded
-- [ ] Privacy policy live at public URL
-- [ ] Support email + URL set
-- [ ] Pricing matches code ($20/month, 14-day trial)
-- [ ] Reviewer testing instructions pasted
-
----
-
-# Phase 5 — Final pre-submission testing
-
-Run this **exactly like a Shopify reviewer** on a **fresh dev store** (or after uninstall/reinstall).
-
-## 5.1 Fresh install flow
-
-- [ ] Uninstall CartQuest completely
-- [ ] Install again from Partner Dashboard
-- [ ] Billing approval works
-- [ ] App loads without Application Error
-- [ ] No errors in `pm2 logs cartquest` during install
-
-## 5.2 Core functionality
-
-- [ ] Save tier settings → success toast
-- [ ] Checkout discount active
-- [ ] Checkout discount applies at correct thresholds
-- [ ] Disable program → discount stops
-- [ ] Re-enable → discount works again
-
-## 5.3 Extensions
-
-- [ ] `tier-cart-discount` function active (checkout works)
-- [ ] `tier-cart-ui` theme extension can be enabled
-
-## 5.4 Billing (production mode)
-
-- [ ] `isTest: false` deployed
-- [ ] Billing charge flow works on dev store
-
-## 5.5 Legal / compliance
-
-- [ ] Privacy policy URL loads publicly
-- [ ] Compliance webhooks registered (check Dev Dashboard → **Versions** → active version)
-- [ ] App uninstall cleans up (no crash in logs)
-
-## 5.6 Production infra
-
-- [ ] `SHOPIFY_APP_URL` correct on server `.env`
-- [ ] Dev Dashboard app version URLs match production domain
-- [ ] OAuth redirect goes to `admin.shopify.com` (not your domain)
-- [ ] Database stable (no session errors in logs)
-
-## 5.7 Official Shopify checklist
-
-Review Shopify’s requirements:  
-[App Store review requirements](https://shopify.dev/docs/apps/launch/app-store-review/app-store-ai-self-review-requirements)
-
----
-
-# Phase 6 — Submit for review
-
-When Phase 5 is 100% complete:
-
-1. Partner Dashboard → **CartQuest**
-2. Open **App Store listing** — fix any red/incomplete sections
-3. Dev Dashboard → **Versions** — active version URLs and webhooks look correct
-4. Partner Dashboard → **Distribution** — listing complete, no blockers
-5. Click **Submit for review** (or **Manage submission**)
-
-## What to expect
-
-| Timeline | What happens |
-|----------|----------------|
-| 1–10+ business days | Shopify reviews your app |
-| Approved | App can be listed; public installs allowed |
-| Changes requested | Fix issues → resubmit |
-| Rejected | Read feedback → fix → resubmit |
-
-Keep `pm2 logs` and email notifications monitored during review — Shopify may email you.
-
----
-
-# After approval
-
-- [ ] Set app to **Published** on App Store (if not automatic)
-- [ ] Test install from App Store listing on a new dev store
-- [ ] Monitor logs for first real merchant installs
-- [ ] Fix homepage login form (optional, lower priority)
-
----
-
-# Quick reference — CartQuest specifics
-
-| Item | Value |
-|------|--------|
-| App name | CartQuest |
-| Production URL | `https://shopify.ktcloud365.com` |
-| Billing plan | Premium Plan — $20/month, 14-day trial |
-| Checkout discount name | CartQuest Rewards |
-| Admin page | Rewards settings / Rewards tiers |
-| Theme embed | Cart rewards embed |
-| Theme block | Tier rewards progress |
-| Scopes | write_metaobjects, write_metaobject_definitions, write_discounts |
-| Distribution | App Store (requires review for public installs) |
-
----
-
-# Your action plan this week
-
-| Day | Task |
-|-----|------|
-| **Today** | Phase 1 — URLs, deploy, server env |
-| **Tomorrow** | Phase 2 — Install on dev store, test checkout |
-| **Day 3** | Phase 2 — Theme widget + uninstall/reinstall |
-| **Day 4** | Phase 3 — Fix billing `isTest`, redeploy |
-| **Day 5–6** | Phase 4 — Screenshots, video, privacy policy |
-| **Day 7** | Phase 5 — Fresh install test as reviewer |
-| **Day 8** | Phase 6 — Submit |
-
----
-
-If you want hands-on help next, I can:
-
-1. **Update `shopify.app.toml` URLs** and billing `isTest` in the codebase  
-2. **Rewrite the homepage** with real CartQuest branding  
-3. **Draft a privacy policy** page you can host  
-
-Tell me which of those you want to tackle first.
+After uninstall/reinstall, Save may create a unique config handle automatically. Merchants only need to click **Save & activate** once. You do not need to explain metaobjects to reviewers unless asked.

@@ -15,7 +15,7 @@ import {
   parseConfigFromFormData,
   saveTierRewardsConfig,
 } from "../lib/tier-rewards.server";
-import { authenticate, MONTHLY_PLAN } from "../shopify.server";
+import { authenticate, isBillingTestMode, MONTHLY_PLAN } from "../shopify.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -26,11 +26,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const { admin, billing } = await authenticate.admin(request);
 
-  // Require active billing. If none exists, this will redirect to the plan selection page.
+  // Require an active subscription before the admin UI loads.
   await billing.require({
     plans: [MONTHLY_PLAN],
-    isTest: true, // Remove or set to false in production
-    onFailure: async () => billing.request({ plan: MONTHLY_PLAN, isTest: true }),
+    isTest: isBillingTestMode,
+    onFailure: async () =>
+      billing.request({ plan: MONTHLY_PLAN, isTest: isBillingTestMode }),
   });
 
   let tierData = {

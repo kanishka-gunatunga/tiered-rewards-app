@@ -1,0 +1,97 @@
+.page {
+  min-height: 100%;
+  margin: 0;
+  padding: 2.5rem 1.25rem 3rem;
+  box-sizing: border-box;
+  background: #fafafa;
+  color: #111827;
+}
+
+.article {
+  width: min(100%, 44rem);
+  margin: 0 auto;
+  padding: 2rem 1.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.brand {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 2.125rem);
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.meta {
+  margin: 0.5rem 0 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.lead {
+  margin: 1.25rem 0 0;
+  color: #374151;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.section {
+  margin-top: 1.75rem;
+}
+
+.section h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1.0625rem;
+  font-weight: 650;
+  color: #111827;
+}
+
+.section p,
+.section li {
+  margin: 0;
+  color: #374151;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.section ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.section p + p {
+  margin-top: 0.75rem;
+}
+
+.section a {
+  color: #111827;
+  font-weight: 550;
+}
+
+.footerNote {
+  margin: 2rem 0 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 40rem) {
+  .article {
+    padding: 1.5rem 1.15rem;
+  }
+}
