@@ -257,7 +257,7 @@ Look for `[app] save settings action failed`, `[tier-rewards] metaobjectUpsert`,
 |-------------|-----|
 | `431` / header too large | Clear cookies or use Incognito; apply IIS header limit fix from section 2.2 |
 | `discount sync failed` / function not found | Run `shopify app deploy` locally, then save again |
-| `metaobjectUpsert` / type not found | Usually an **orphaned metaobject** from a previous app uninstall (handle `default`). Deploy latest app code (uses handle `active`), run `shopify app deploy`, rebuild + restart PM2, then save again. If it persists, contact Shopify Support to remove orphaned metaobjects. |
+| `metaobjectUpsert` / “No metaobject definition exists” | Shopify orphaned-handle bug after uninstall/reinstall (not a missing definition). Deploy latest app code (retries with a unique `cfg-…` handle), run `shopify app deploy`, rebuild + restart PM2, then save again. |
 | Database / Prisma error | Check `DATABASE_URL` in `.env`, run `npm run setup` |
 
 **Step 3 — deploy latest app code to server** (includes better error messages instead of Application Error):
@@ -270,15 +270,22 @@ pm2 restart cartquest --update-env
 
 ### Troubleshooting: `No metaobject definition exists for type "app--…--tier_rewards_config"`
 
-This is **not** a missing deploy. The metaobject definition exists, but Shopify has a known bug when the app was previously uninstalled: an invisible orphaned entry with handle **`default`** blocks `metaobjectUpsert` on that handle.
+This error is **misleading**. The metaobject **definition usually exists**. After uninstall/reinstall, Shopify leaves **invisible orphaned entries** that still occupy handles like `default` or `active`. `metaobjectUpsert` then fails with “No metaobject definition exists” even though `metaobjectDefinitionByType` succeeds.
 
-**Fix (included in latest code):** the app now saves config under handle **`active`** instead of `default`. After you deploy:
+**Durable fix (in latest code):** Save settings retries automatically:
+1. Update any **live** config entry already on the shop
+2. Try handle `active`
+3. If those are blocked by orphans, create a **new unique handle** (`cfg-…`)
 
-1. **Locally:** `shopify app deploy` (updates checkout discount + theme extension to read `active`)
+Storefront Liquid reads whatever live entry appears in `.values` (not a hardcoded handle). Checkout discounts use the **discount metafield** synced on Save (not the metaobject handle).
+
+After you deploy:
+
+1. **Locally:** `shopify app deploy` (theme extension + discount function)
 2. **On server:** `npm run build` and `pm2 restart cartquest --update-env`
 3. Hard refresh CartQuest in Admin and click **Save settings** again
 
-Until you save once, the admin may still load an older config entry if one exists on the store. After save, storefront and checkout use the new `active` entry.
+You can uninstall/reinstall repeatedly — Save should keep working without manual handle changes.
 
 **Also remove dev preview** if you still see “dev previews (1)” in the app header — run `shopify app dev clean -s YOUR-DEV-STORE.myshopify.com` locally.
 
@@ -440,7 +447,7 @@ Re-test billing on dev store after this change.
 
 ## 3.2 Customize public homepage (recommended)
 
-The page at `https://shopify.ktcloud365.com/` still shows template placeholder text. For review, update `app/routes/_index/route.tsx` with:
+The page at `https://shopify.ktcloud365.com/` still shows template placeholder text. For review, update `app/routes/_index/route.ts x` with:
 
 - App name: **CartQuest**
 - Real tagline and feature descriptions

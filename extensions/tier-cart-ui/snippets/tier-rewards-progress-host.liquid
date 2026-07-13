@@ -2,7 +2,11 @@
   Loads tier rewards metaobject config and renders the progress bar when enabled.
 {%- endcomment -%}
 {% liquid
-  assign rewards_entry = shop.metaobjects['$app:tier_rewards_config'].active
+  # Prefer any live entry — fixed handles like "active" can be orphaned after reinstall.
+  assign rewards_entry = nil
+  for entry in shop.metaobjects['$app:tier_rewards_config'].values
+    assign rewards_entry = entry
+  endfor
   assign rewards_enabled = false
   assign tiers_json = blank
   assign primary_color = '#bb4d00'

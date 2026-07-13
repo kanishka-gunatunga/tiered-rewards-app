@@ -1,9 +1,13 @@
 {%- comment -%}
   Auto-injects a cart-level tier discount row into cart drawer and cart page
-  totals when a tier reward is active.
+  totals when a tier reward is active — only if the theme does not already
+  render cart-level discounts (Dawn and most OS 2.0 themes already do).
 {%- endcomment -%}
 {%- liquid
-  assign rewards_entry = shop.metaobjects['$app:tier_rewards_config'].active
+  assign rewards_entry = nil
+  for entry in shop.metaobjects['$app:tier_rewards_config'].values
+    assign rewards_entry = entry
+  endfor
   assign rewards_enabled = false
 
   if rewards_entry
@@ -21,6 +25,7 @@
 
       const LABEL = {{ block.settings.label | default: 'CartQuest tier reward' | json }};
       const CURRENCY = {{ cart.currency.iso_code | json }};
+      const ROW_ATTR = "data-tier-cart-discount-inject";
 
       const formatMoney = (cents) => {
         const amount = Number(cents || 0) / 100;
@@ -48,6 +53,20 @@
         ".cart-footer",
       ];
 
+      /** Themes (e.g. Dawn) that already list cart-level discounts under subtotal. */
+      const NATIVE_DISCOUNT_SELECTORS = [
+        ".cart__footer .discounts__discount",
+        ".cart-footer .discounts__discount",
+        ".cart__blocks .discounts__discount",
+        ".cart-drawer__footer .discounts__discount",
+        "#CartDrawer .discounts__discount",
+        "cart-drawer .discounts__discount",
+        ".cart__footer .discounts li",
+        ".cart-drawer__footer .discounts li",
+        "[data-cart-discount]",
+        ".tr-cart-discount-summary",
+      ];
+
       const findTotalsHost = () => {
         for (const selector of TOTAL_SELECTORS) {
           const host = document.querySelector(selector);
@@ -56,27 +75,69 @@
         return null;
       };
 
+      const themeAlreadyShowsDiscount = () =>
+        NATIVE_DISCOUNT_SELECTORS.some((selector) => document.querySelector(selector));
+
+      const removeInjectedRows = () => {
+        document.querySelectorAll(`[${ROW_ATTR}]`).forEach((row) => row.remove());
+      };
+
+      /** Remove accidental duplicates from older buggy injects. */
+      const dedupeRows = () => {
+        const rows = document.querySelectorAll(`[${ROW_ATTR}]`);
+        rows.forEach((row, index) => {
+          if (index > 0) row.remove();
+        });
+        return rows[0] || null;
+      };
+
+      /**
+       * Place a full-width row AFTER the totals block — never inside the
+       * Subtotal / price flex row (that breaks Dawn into "Subto … tal").
+       */
       const ensureRow = (host) => {
-        let row = host.querySelector("[data-tier-cart-discount-inject]");
+        let row = dedupeRows();
+
         if (!row) {
           row = document.createElement("div");
-          row.setAttribute("data-tier-cart-discount-inject", "");
+          row.setAttribute(ROW_ATTR, "");
           row.style.cssText =
-            "display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 10px;font-family:Inter,sans-serif;font-size:14px;line-height:1.4;color:#364153;";
-          const subtotal = host.querySelector(
-            ".totals__subtotal, .cart__subtotal, [data-cart-subtotal], .subtotal",
-          );
-          if (subtotal?.parentElement) {
-            subtotal.parentElement.insertAdjacentElement("afterend", row);
+            "display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 10px;width:100%;flex:1 0 100%;box-sizing:border-box;font-family:Inter,sans-serif;font-size:14px;line-height:1.4;color:#364153;";
+        }
+
+        const anchor = host.classList?.contains("totals")
+          ? host
+          : host.querySelector(".totals") || host;
+
+        // Keep the row as the next sibling of .totals (outside the subtotal flex).
+        if (row.previousElementSibling !== anchor) {
+          if (anchor.parentElement) {
+            anchor.insertAdjacentElement("afterend", row);
           } else {
-            host.prepend(row);
+            host.appendChild(row);
           }
         }
+
         return row;
       };
 
+      let renderQueued = false;
+      let renderInFlight = false;
+
       const render = async () => {
+        if (renderInFlight) {
+          renderQueued = true;
+          return;
+        }
+        renderInFlight = true;
         try {
+          // Dawn (and similar) already render the discount with the tag icon —
+          // injecting again duplicates it and can break the subtotal layout.
+          if (themeAlreadyShowsDiscount()) {
+            removeInjectedRows();
+            return;
+          }
+
           const response = await fetch("/cart.js", {
             credentials: "same-origin",
             cache: "no-store",
@@ -86,14 +147,17 @@
           const cartData = await response.json();
           const totalDiscount = Number(cartData?.total_discount || 0);
           const host = findTotalsHost();
-          if (!host) return;
-
-          const row = ensureRow(host);
-          if (totalDiscount <= 0) {
-            row.hidden = true;
+          if (!host) {
+            removeInjectedRows();
             return;
           }
 
+          if (totalDiscount <= 0) {
+            removeInjectedRows();
+            return;
+          }
+
+          const row = ensureRow(host);
           const applications = Array.isArray(cartData?.cart_level_discount_applications)
             ? cartData.cart_level_discount_applications
             : [];
@@ -110,12 +174,21 @@
           `;
         } catch {
           /* ignore */
+        } finally {
+          renderInFlight = false;
+          if (renderQueued) {
+            renderQueued = false;
+            queueRender();
+          }
         }
       };
 
-      const queueRender = () => window.setTimeout(render, 120);
+      const queueRender = () => {
+        window.clearTimeout(window.__tierCartDiscountInjectTimer);
+        window.__tierCartDiscountInjectTimer = window.setTimeout(render, 120);
+      };
 
-      ["cart:updated", "cart:refresh", "theme:cart:change", "theme:cart:update", "tier-rewards:refresh"].forEach(
+      ["cart:updated", "cart:refresh", "theme:cart:change", "theme:cart:update"].forEach(
         (eventName) => document.addEventListener(eventName, queueRender),
       );
       document.addEventListener("DOMContentLoaded", queueRender);
@@ -131,7 +204,7 @@
   "settings": [
     {
       "type": "paragraph",
-      "content": "Automatically adds a cart-level tier discount row near the cart subtotal/checkout area (cart page and drawer). Enable this if your theme only shows the reward as a product sale price."
+      "content": "Only needed when your theme does NOT show cart-level discounts under the subtotal. Dawn and most Online Store 2.0 themes already show them — leave this embed OFF there. If left on, CartQuest detects the native discount UI and does nothing."
     },
     {
       "type": "text",

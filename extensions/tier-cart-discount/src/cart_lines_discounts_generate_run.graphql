@@ -20,14 +20,4 @@ query CartInput {
       jsonValue
     }
   }
-  shop {
-    metaobject(handle: {type: "$app:tier_rewards_config", handle: "active"}) {
-      enabled: field(key: "enabled") {
-        value
-      }
-      tiers: field(key: "tiers") {
-        jsonValue
-      }
-    }
-  }
 }

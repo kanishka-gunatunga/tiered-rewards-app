@@ -1,5 +1,8 @@
 {% liquid
-  assign rewards_entry = shop.metaobjects['$app:tier_rewards_config'].active
+  assign rewards_entry = nil
+  for entry in shop.metaobjects['$app:tier_rewards_config'].values
+    assign rewards_entry = entry
+  endfor
   assign rewards_enabled = false
   assign tiers_json = blank
   assign cart_subtotal_cents = cart.items_subtotal_price | default: cart.total_price

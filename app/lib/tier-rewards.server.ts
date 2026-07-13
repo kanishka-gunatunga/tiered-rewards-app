@@ -22,7 +22,12 @@ type AdminGraphQLClient = Awaited<
 >["admin"];
 
 export const TIER_REWARDS_METAOBJECT_TYPE = "$app:tier_rewards_config";
-/** Avoid handle "default" — orphaned entries from reinstall can block metaobjectUpsert. */
+/**
+ * Preferred handle for fresh installs. After uninstall/reinstall, Shopify can
+ * leave invisible orphaned entries that block upsert on reused handles
+ * (including "default" and "active"). Save retries with a unique handle when
+ * that happens — see isOrphanedHandleCollisionError.
+ */
 export const TIER_REWARDS_CONFIG_HANDLE = "active";
 
 const METAOBJECT_CONFIG_FIELDS = `
@@ -76,6 +81,10 @@ type TierRewardsMetaobjectNode = {
   tiers?: { jsonValue?: unknown };
 };
 
+type MetaobjectUpsertResult =
+  | { ok: true; handle: string }
+  | { ok: false; errors: string[]; orphanCollision: boolean };
+
 function pickTierRewardsMetaobjectNode(
   nodes: TierRewardsMetaobjectNode[],
 ): TierRewardsMetaobjectNode | null {
@@ -84,6 +93,148 @@ function pickTierRewardsMetaobjectNode(
   return (
     nodes.find((node) => node.handle === TIER_REWARDS_CONFIG_HANDLE) ?? nodes[0]
   );
+}
+
+/** Shopify returns this misleading error when an orphaned entry blocks the handle. */
+function isOrphanedHandleCollisionError(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("no metaobject definition exists") ||
+    lower.includes("undefined_object_type")
+  );
+}
+
+function createUniqueConfigHandle(): string {
+  const suffix = `${Date.now().toString(36)}${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+  return `cfg-${suffix}`;
+}
+
+async function listLiveConfigNodes(
+  admin: AdminGraphQLClient,
+): Promise<TierRewardsMetaobjectNode[]> {
+  const response = await admin.graphql(METAOBJECTS_QUERY);
+  const json = (await response.json()) as {
+    data?: {
+      metaobjects?: {
+        nodes?: TierRewardsMetaobjectNode[];
+      };
+    };
+    errors?: { message: string }[];
+  };
+
+  if (json.errors?.length) {
+    console.error(
+      "[tier-rewards] metaobjects query failed:",
+      JSON.stringify(json.errors),
+    );
+    return [];
+  }
+
+  return json.data?.metaobjects?.nodes ?? [];
+}
+
+function buildConfigUpsertFields(config: TierRewardsConfig) {
+  return [
+    { key: "title", value: config.title },
+    { key: "enabled", value: config.enabled ? "true" : "false" },
+    { key: "program_title", value: config.programTitle },
+    { key: "homepage_subtitle", value: config.homepageSubtitle },
+    { key: "primary_color", value: config.primaryColor },
+    { key: "secondary_color", value: config.secondaryColor },
+    { key: "background_color", value: config.backgroundColor },
+    { key: "tiers", value: JSON.stringify(config.tiers) },
+  ];
+}
+
+const METAOBJECT_UPSERT_MUTATION = `#graphql
+  mutation TierRewardsConfigUpsert(
+    $handle: MetaobjectHandleInput!
+    $metaobject: MetaobjectUpsertInput!
+  ) {
+    metaobjectUpsert(handle: $handle, metaobject: $metaobject) {
+      metaobject {
+        id
+        handle
+      }
+      userErrors {
+        field
+        message
+        code
+      }
+    }
+  }
+`;
+
+async function upsertConfigWithHandle(
+  admin: AdminGraphQLClient,
+  handle: string,
+  config: TierRewardsConfig,
+): Promise<MetaobjectUpsertResult> {
+  let response: Response;
+  try {
+    response = await admin.graphql(METAOBJECT_UPSERT_MUTATION, {
+      variables: {
+        handle: {
+          type: TIER_REWARDS_METAOBJECT_TYPE,
+          handle,
+        },
+        metaobject: {
+          fields: buildConfigUpsertFields(config),
+        },
+      },
+    });
+  } catch (error) {
+    console.error("[tier-rewards] metaobjectUpsert request failed:", error);
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Could not reach Shopify to save settings.";
+    return {
+      ok: false,
+      errors: [message],
+      orphanCollision: isOrphanedHandleCollisionError(message),
+    };
+  }
+
+  const json = (await response.json()) as {
+    data?: {
+      metaobjectUpsert?: {
+        metaobject?: { handle?: string | null } | null;
+        userErrors?: Array<{ message: string; code?: string | null }>;
+      };
+    };
+    errors?: Array<{ message: string }>;
+  };
+
+  if (json.errors?.length) {
+    console.error(
+      "[tier-rewards] metaobjectUpsert GraphQL errors:",
+      JSON.stringify(json.errors),
+    );
+    const messages = json.errors.map((e) => e.message || "Save failed.");
+    return {
+      ok: false,
+      errors: messages,
+      orphanCollision: messages.some(isOrphanedHandleCollisionError),
+    };
+  }
+
+  const userErrors = json.data?.metaobjectUpsert?.userErrors ?? [];
+  if (userErrors.length > 0) {
+    const messages = userErrors.map((e) => e.message || "Save failed.");
+    return {
+      ok: false,
+      errors: messages,
+      orphanCollision: messages.some(isOrphanedHandleCollisionError),
+    };
+  }
+
+  return {
+    ok: true,
+    handle: json.data?.metaobjectUpsert?.metaobject?.handle || handle,
+  };
 }
 
 function metaobjectNodeToConfig(
@@ -114,24 +265,6 @@ function metaobjectNodeToConfig(
     tiers: tiers.length > 0 ? tiers : DEFAULT_TIER_REWARDS_CONFIG.tiers,
   };
 }
-
-const METAOBJECT_UPSERT_MUTATION = `#graphql
-  mutation TierRewardsConfigUpsert(
-    $handle: MetaobjectHandleInput!
-    $metaobject: MetaobjectUpsertInput!
-  ) {
-    metaobjectUpsert(handle: $handle, metaobject: $metaobject) {
-      metaobject {
-        id
-        handle
-      }
-      userErrors {
-        field
-        message
-      }
-    }
-  }
-`;
 
 export function centsToDollarString(cents: number): string {
   return (cents / 100).toFixed(2);
@@ -181,27 +314,7 @@ function parseBooleanField(value: string | null | undefined): boolean {
 export async function loadTierRewardsConfig(
   admin: AdminGraphQLClient,
 ): Promise<TierRewardsConfig> {
-  const response = await admin.graphql(METAOBJECTS_QUERY);
-  const json = (await response.json()) as {
-    data?: {
-      metaobjects?: {
-        nodes?: TierRewardsMetaobjectNode[];
-      };
-    };
-    errors?: { message: string }[];
-  };
-
-  if (json.errors?.length) {
-    console.error(
-      "[tier-rewards] metaobjects query failed:",
-      JSON.stringify(json.errors),
-    );
-    return { ...DEFAULT_TIER_REWARDS_CONFIG };
-  }
-
-  const node = pickTierRewardsMetaobjectNode(
-    json.data?.metaobjects?.nodes ?? [],
-  );
+  const node = pickTierRewardsMetaobjectNode(await listLiveConfigNodes(admin));
 
   if (!node) {
     return { ...DEFAULT_TIER_REWARDS_CONFIG };
@@ -333,70 +446,42 @@ export async function saveTierRewardsConfig(
     return { ok: false, errors: validationErrors };
   }
 
-  let response: Response;
-  try {
-    response = await admin.graphql(METAOBJECT_UPSERT_MUTATION, {
-      variables: {
-        handle: {
-          type: TIER_REWARDS_METAOBJECT_TYPE,
-          handle: TIER_REWARDS_CONFIG_HANDLE,
-        },
-        metaobject: {
-          fields: [
-            { key: "title", value: config.title },
-            { key: "enabled", value: config.enabled ? "true" : "false" },
-            { key: "program_title", value: config.programTitle },
-            { key: "homepage_subtitle", value: config.homepageSubtitle },
-            { key: "primary_color", value: config.primaryColor },
-            { key: "secondary_color", value: config.secondaryColor },
-            { key: "background_color", value: config.backgroundColor },
-            { key: "tiers", value: JSON.stringify(config.tiers) },
-          ],
-        },
-      },
-    });
-  } catch (error) {
-    console.error("[tier-rewards] metaobjectUpsert request failed:", error);
-    return {
-      ok: false,
-      errors: [
-        error instanceof Error
-          ? error.message
-          : "Could not reach Shopify to save settings.",
-      ],
-    };
-  }
+  const liveNodes = await listLiveConfigNodes(admin);
+  const liveHandles = liveNodes
+    .map((node) => node.handle)
+    .filter((handle): handle is string => Boolean(handle));
 
-  const json = (await response.json()) as {
-    data?: {
-      metaobjectUpsert?: {
-        userErrors?: Array<{ message: string }>;
-      };
-    };
-    errors?: Array<{ message: string }>;
-  };
+  // Prefer an existing live entry, then the stable handle, then unique handles
+  // so reinstall orphan collisions never permanently block Save.
+  const handlesToTry = [
+    ...liveHandles,
+    TIER_REWARDS_CONFIG_HANDLE,
+    createUniqueConfigHandle(),
+    createUniqueConfigHandle(),
+  ].filter((handle, index, all) => all.indexOf(handle) === index);
 
-  if (json.errors?.length) {
-    console.error(
-      "[tier-rewards] metaobjectUpsert GraphQL errors:",
-      JSON.stringify(json.errors),
+  let lastErrors: string[] = ["Could not save settings."];
+
+  for (const handle of handlesToTry) {
+    const result = await upsertConfigWithHandle(admin, handle, config);
+    if (result.ok) {
+      if (handle !== TIER_REWARDS_CONFIG_HANDLE) {
+        console.info(
+          `[tier-rewards] saved config with handle "${result.handle}" (avoided orphaned-handle collision)`,
+        );
+      }
+      return { ok: true };
+    }
+
+    lastErrors = result.errors;
+    if (!result.orphanCollision) {
+      return { ok: false, errors: result.errors };
+    }
+
+    console.warn(
+      `[tier-rewards] handle "${handle}" blocked by orphaned metaobject; trying next handle`,
     );
-    return {
-      ok: false,
-      errors: json.errors.map((e) => e.message || "Save failed."),
-    };
   }
 
-  const userErrors = json.data?.metaobjectUpsert?.userErrors ?? [];
-
-  if (userErrors.length > 0) {
-    return {
-      ok: false,
-      errors: userErrors.map(
-        (e: { message: string }) => e.message || "Save failed.",
-      ),
-    };
-  }
-
-  return { ok: true };
+  return { ok: false, errors: lastErrors };
 }

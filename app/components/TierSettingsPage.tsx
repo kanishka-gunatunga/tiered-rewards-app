@@ -82,11 +82,13 @@ export default function TierSettingsPage() {
     if (actionData?.ok === true) {
       shopify.toast.show(
         actionData.checkoutDiscountActive
-          ? "Settings saved — checkout discount is active"
+          ? loaderCheckoutDiscountActive
+            ? "Settings saved — checkout discount updated"
+            : "CartQuest activated — checkout discounts are live"
           : "Settings saved",
       );
     }
-  }, [actionData, shopify]);
+  }, [actionData, shopify, loaderCheckoutDiscountActive]);
 
   const addTier = () => {
     if (tiers.length >= MAX_TIERS) return;
@@ -110,15 +112,25 @@ export default function TierSettingsPage() {
   return (
     <s-page heading="Rewards tiers">
       <div className={styles.page}>
-        <Form method="post">
+        <Form method="post" className={styles.formStack}>
           <div className={styles.headerRow}>
-            <h2 className={styles.title}>Rewards settings</h2>
+            <div className={styles.headerCopy}>
+              <h2 className={styles.title}>Rewards settings</h2>
+              <p className={styles.pageIntro}>
+                Set cart spend goals and automatic discounts. Shoppers unlock a
+                reward when their cart total reaches each tier.
+              </p>
+            </div>
             <button
               type="submit"
               className={styles.buttonPrimary}
               disabled={isSaving}
             >
-              {isSaving ? "Saving…" : "Save settings"}
+              {isSaving
+                ? "Saving…"
+                : checkoutDiscountActive
+                  ? "Save settings"
+                  : "Save & activate"}
             </button>
           </div>
 
@@ -126,14 +138,37 @@ export default function TierSettingsPage() {
             <div className={styles.warningBox}>
               <p>{loadError}</p>
               <p className={styles.hint}>
-                Showing default values. Save once to create the config in
-                Shopify.
+                Showing default values. Click <strong>Save &amp; activate</strong>{" "}
+                once to finish setup.
               </p>
             </div>
           )}
 
           {!loadError && (
             <>
+              {!checkoutDiscountActive && (
+                <div className={styles.getStartedCard} role="status">
+                  <h3 className={styles.getStartedTitle}>
+                    Get started — activate CartQuest
+                  </h3>
+                  <p className={styles.statusCardBody}>
+                    Your reward tiers are ready below, but checkout discounts are
+                    not live yet. Click <strong>Save &amp; activate</strong> once
+                    to turn them on for this store.
+                  </p>
+                  <ol className={styles.setupSteps}>
+                    <li>
+                      Review your tiers (defaults are fine), then click{" "}
+                      <strong>Save &amp; activate</strong>
+                    </li>
+                    <li>
+                      Optionally add a progress bar on your cart page so shoppers
+                      can see how close they are to a reward
+                    </li>
+                  </ol>
+                </div>
+              )}
+
               <div
                 className={`${styles.statusCard} ${
                   checkoutDiscountActive
@@ -150,70 +185,112 @@ export default function TierSettingsPage() {
                         : styles.statusBadgePending
                     }`}
                   >
-                    {checkoutDiscountActive ? "Active" : "Setup needed"}
+                    {checkoutDiscountActive ? "Active" : "Not activated"}
                   </span>
                   <h3 className={styles.statusCardTitle}>Checkout discounts</h3>
                 </div>
                 {checkoutDiscountActive ? (
                   <>
                     <p className={styles.statusCardBody}>
-                      Tier discounts are applied automatically at checkout when a
-                      customer&apos;s cart subtotal reaches each level you
-                      configure below.
+                      Shoppers automatically get the matching discount at checkout
+                      when their cart total reaches a tier.
                     </p>
                     <p className={styles.statusCardMeta}>
-                      Shopify discount: <strong>CartQuest Rewards</strong>{" "}
-                      (Admin → Discounts). Saving settings updates this discount.
+                      Look for <strong>CartQuest Rewards</strong> under Admin →
+                      Discounts. Each save updates that discount.
                     </p>
                   </>
                 ) : (
                   <p className={styles.statusCardBody}>
-                    Save your settings once to activate checkout discounts. After
-                    that, each save updates your tiers for customers at checkout.
+                    Not live yet. Click <strong>Save &amp; activate</strong> to
+                    create the CartQuest Rewards discount. After that, saving only
+                    updates your tier amounts.
                   </p>
                 )}
               </div>
 
               <div className={styles.statusCard}>
                 <div className={styles.statusCardHeader}>
-                  <h3 className={styles.statusCardTitle}>Cart page progress bar</h3>
+                  <h3 className={styles.statusCardTitle}>
+                    Show a progress bar on the cart page{" "}
+                    <span className={styles.optionalLabel}>(optional)</span>
+                  </h3>
                 </div>
-                <p className={styles.statusCardBody} style={{ marginBottom: "16px" }}>
-                  Pick one setup below. Do not use both on the same cart page.
+                <p className={styles.setupIntro}>
+                  Helps shoppers see how much more they need to spend to unlock
+                  the next reward. Choose <strong>one</strong> option below — do
+                  not use both on the same cart page.
                 </p>
 
-                <p className={styles.setupSubtitle}>Option A — Theme editor (no code)</p>
-                <ol className={styles.setupSteps}>
-                  <li>Online Store → Themes → <strong>Customize</strong></li>
-                  <li>Open the <strong>Cart</strong> page</li>
-                  <li>Select your cart items section → <strong>Add block</strong> → <strong>Apps</strong></li>
-                  <li>Choose <strong>Cart tier progress</strong> and place it above the product list</li>
-                  <li>Click <strong>Save</strong></li>
-                </ol>
+                <div className={styles.setupOption}>
+                  <div className={styles.setupOptionHeader}>
+                    <p className={styles.setupSubtitle}>
+                      Option A — Use the theme editor
+                    </p>
+                    <span className={styles.recommendedPill}>Recommended</span>
+                  </div>
+                  <p className={styles.setupOptionHint}>
+                    No code needed. Best for most stores.
+                  </p>
+                  <ol className={styles.setupSteps}>
+                    <li>
+                      Go to Online Store → Themes → <strong>Customize</strong>
+                    </li>
+                    <li>
+                      Open the <strong>Cart</strong> page
+                    </li>
+                    <li>
+                      Select your cart items section → <strong>Add block</strong>{" "}
+                      → <strong>Apps</strong>
+                    </li>
+                    <li>
+                      Choose <strong>Cart tier progress</strong> and place it
+                      above the product list
+                    </li>
+                    <li>
+                      Click <strong>Save</strong>
+                    </li>
+                  </ol>
+                </div>
 
-                <p className={styles.setupSubtitle}>Option B — Paste in theme code</p>
-                <ol className={styles.setupSteps}>
-                  <li>
-                    Customize → <strong>Theme settings</strong> → <strong>App embeds</strong> → turn on{" "}
-                    <strong>Cart progress paste</strong>
-                  </li>
-                  <li>
-                    Online Store → Themes → <strong>Edit code</strong> → open your cart section file (often{" "}
-                    <code>sections/main-cart-items.liquid</code>)
-                  </li>
-                  <li>
-                    Paste this line where the bar should appear (above the product list, outside any{" "}
-                    <code>&lt;table&gt;</code>):
-                  </li>
-                </ol>
-                <pre className={styles.codeBlock}>{cartProgressPasteCode}</pre>
-                <ol className={styles.setupSteps} start={4}>
-                  <li>Save the theme file</li>
-                </ol>
-                <p className={styles.statusCardMeta}>
-                  Also enable <strong>Cart drawer guard</strong> under App embeds so the bar does not appear
-                  inside the cart drawer.
-                </p>
+                <div className={styles.setupOption}>
+                  <div className={styles.setupOptionHeader}>
+                    <p className={styles.setupSubtitle}>
+                      Option B — Paste a short code snippet
+                    </p>
+                  </div>
+                  <p className={styles.setupOptionHint}>
+                    Only if Option A is not available for your theme.
+                  </p>
+                  <ol className={styles.setupSteps}>
+                    <li>
+                      Customize → <strong>Theme settings</strong> →{" "}
+                      <strong>App embeds</strong> → turn on{" "}
+                      <strong>Cart progress paste</strong>
+                    </li>
+                    <li>
+                      Online Store → Themes → <strong>Edit code</strong> → open
+                      your cart section file (often{" "}
+                      <code>sections/main-cart-items.liquid</code>)
+                    </li>
+                    <li>
+                      Paste this line where the bar should appear (above the
+                      product list, outside any <code>&lt;table&gt;</code>):
+                    </li>
+                  </ol>
+                  <pre className={styles.codeBlock}>{cartProgressPasteCode}</pre>
+                  <ol
+                    className={`${styles.setupSteps} ${styles.setupStepsContinue}`}
+                    start={4}
+                  >
+                    <li>Save the theme file</li>
+                  </ol>
+                  <p className={styles.tipBox}>
+                    Tip: Also turn on <strong>Cart drawer guard</strong> under App
+                    embeds. That keeps the progress bar off the cart drawer so it
+                    only shows on the cart page.
+                  </p>
+                </div>
 
                 <div className={styles.setupActions}>
                   <a
@@ -221,7 +298,6 @@ export default function TierSettingsPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className={styles.buttonSecondary}
-                    style={{ textDecoration: "none", display: "inline-block" }}
                   >
                     Open theme editor (Cart)
                   </a>
@@ -230,7 +306,6 @@ export default function TierSettingsPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     className={styles.buttonSecondary}
-                    style={{ textDecoration: "none", display: "inline-block" }}
                   >
                     Open app embeds
                   </a>
@@ -241,7 +316,7 @@ export default function TierSettingsPage() {
 
           {errors.length > 0 && (
             <div className={styles.errorBox}>
-              <strong>Fix these issues:</strong>
+              <strong>Please fix these issues:</strong>
               <ul className={styles.errorList}>
                 {errors.map((message) => (
                   <li key={message}>{message}</li>
@@ -260,18 +335,19 @@ export default function TierSettingsPage() {
                 checked={enabled}
                 onChange={(e) => setEnabled(e.target.checked)}
               />
-              <span>Program enabled</span>
+              <span>Rewards program is on</span>
             </label>
             <p className={styles.hint}>
-              Turn off to hide storefront rewards and pause checkout tier discounts.
+              Turn this off to temporarily hide rewards on your store and pause
+              checkout discounts.
             </p>
           </section>
 
-          <section className={`${styles.section} ${styles.sectionSpaced}`}>
-            <h3 className={styles.sectionTitle}>Spend tiers (cart subtotal)</h3>
+          <section className={styles.section}>
+            <h3 className={styles.sectionTitle}>Reward tiers</h3>
             <p className={styles.hint}>
-              Discounts apply to the current cart subtotal (not lifetime
-              loyalty). Amounts are in your shop currency.
+              Based on the current cart total (not lifetime spending). Amounts use
+              your shop&apos;s currency.
             </p>
 
             <input type="hidden" name="tiersJson" value={JSON.stringify(tiers)} />
@@ -282,7 +358,7 @@ export default function TierSettingsPage() {
                 <div className={styles.fieldRow}>
                   <div className={styles.field}>
                     <label className={styles.label}>
-                      Minimum cart spend ($)
+                      Cart total needed to unlock ($)
                     </label>
                     <input
                       className={styles.input}
@@ -296,7 +372,9 @@ export default function TierSettingsPage() {
                     />
                   </div>
                   <div className={styles.field}>
-                    <label className={styles.label}>Order discount ($)</label>
+                    <label className={styles.label}>
+                      Discount shoppers get ($)
+                    </label>
                     <input
                       className={styles.input}
                       type="text"
@@ -328,10 +406,10 @@ export default function TierSettingsPage() {
             onClick={addTier}
             disabled={tiers.length >= MAX_TIERS}
           >
-            Add tier
+            Add another tier
           </button>
           <span className={styles.hint}>
-            {tiers.length} / {MAX_TIERS} tiers
+            {tiers.length} of {MAX_TIERS} tiers used
           </span>
         </div>
       </div>

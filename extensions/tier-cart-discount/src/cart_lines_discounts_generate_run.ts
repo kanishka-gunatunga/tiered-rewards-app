@@ -77,19 +77,6 @@ function parseRecordConfig(record: Record<string, unknown>): FunctionConfig | nu
   };
 }
 
-function parseMetaobjectConfig(input: CartInput): FunctionConfig | null {
-  const node = input.shop.metaobject;
-  if (!node) return null;
-
-  const enabledRaw = node.enabled?.value;
-  const enabled = enabledRaw !== 'false' && enabledRaw !== '0';
-
-  const tiers = normalizeTiersToCents(parseTierRows(node.tiers?.jsonValue));
-  if (tiers.length === 0) return null;
-
-  return {enabled, tiers};
-}
-
 function parseDiscountMetafieldConfig(input: CartInput): FunctionConfig | null {
   const jsonValue = input.discount.metafield?.jsonValue;
   if (!jsonValue || typeof jsonValue !== 'object' || Array.isArray(jsonValue)) {
@@ -100,7 +87,9 @@ function parseDiscountMetafieldConfig(input: CartInput): FunctionConfig | null {
 }
 
 function parseFunctionConfig(input: CartInput): FunctionConfig | null {
-  return parseMetaobjectConfig(input) ?? parseDiscountMetafieldConfig(input);
+  // Prefer the discount metafield synced on Save — it is not affected by
+  // Shopify's orphaned metaobject-handle bug after uninstall/reinstall.
+  return parseDiscountMetafieldConfig(input);
 }
 
 function getCartSubtotalCents(input: CartInput): number {
