@@ -9,9 +9,23 @@ import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prism
 import prisma from "./db.server";
 
 export const MONTHLY_PLAN = "Premium Plan";
+export const MONTHLY_PLAN_AMOUNT_USD = 20;
+export const MONTHLY_PLAN_TRIAL_DAYS = 14;
 
+/** Local-only override via SHOPIFY_BILLING_TEST_MODE=true (never used on production). */
 export const isBillingTestMode =
+  process.env.NODE_ENV !== "production" &&
   process.env.SHOPIFY_BILLING_TEST_MODE === "true";
+
+if (
+  process.env.NODE_ENV === "production" &&
+  process.env.SHOPIFY_BILLING_TEST_MODE === "true"
+) {
+  console.error(
+    "[billing] SHOPIFY_BILLING_TEST_MODE=true is set on production but ignored. " +
+      "CartQuest uses real billing ($20/mo). Remove this variable from the server .env.",
+  );
+}
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -24,10 +38,10 @@ const shopify = shopifyApp({
   distribution: AppDistribution.AppStore,
   billing: {
     [MONTHLY_PLAN]: {
-      trialDays: 14,
+      trialDays: MONTHLY_PLAN_TRIAL_DAYS,
       lineItems: [
         {
-          amount: 20,
+          amount: MONTHLY_PLAN_AMOUNT_USD,
           currencyCode: "USD",
           interval: BillingInterval.Every30Days,
         },

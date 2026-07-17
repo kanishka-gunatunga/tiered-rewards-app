@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "4715f56b046ff7be152da0fca9f1f4fc"
-application_url = "https://shopify.ktcloud365.com"
+application_url = "https://cartquest.ktcloud365.com"
 embedded = true
 name = "CartQuest"
 
@@ -79,9 +79,9 @@ api_version = "2026-07"
 
 [auth]
 redirect_urls = [
-  "https://shopify.ktcloud365.com/auth/callback",
-  "https://shopify.ktcloud365.com/auth/shopify/callback",
-  "https://shopify.ktcloud365.com/api/auth/callback"
+  "https://cartquest.ktcloud365.com/auth/callback",
+  "https://cartquest.ktcloud365.com/auth/shopify/callback",
+  "https://cartquest.ktcloud365.com/api/auth/callback"
 ]
 
 [build]

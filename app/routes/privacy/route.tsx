@@ -3,8 +3,6 @@ import styles from "../../styles/privacy.module.css";
 const COMPANY_NAME = process.env.COMPANY_NAME || "Kode Tech";
 const SUPPORT_EMAIL =
   process.env.SUPPORT_EMAIL || "hellokodetech@gmail.com";
-const PRIVACY_EMAIL =
-  process.env.PRIVACY_EMAIL || "hellokodetech@gmail.com";
 const LAST_UPDATED = "July 13, 2026";
 
 export default function PrivacyPolicyPage() {
@@ -129,11 +127,8 @@ export default function PrivacyPolicyPage() {
         <section className={styles.section}>
           <h2>8. Contact</h2>
           <p>
-            Privacy questions:{" "}
-            <a href={`mailto:${PRIVACY_EMAIL}`}>{PRIVACY_EMAIL}</a>
-          </p>
-          <p>
-            Support: <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
+            Privacy and support:{" "}
+            <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
           </p>
           <p>Provider: {COMPANY_NAME}</p>
         </section>

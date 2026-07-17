@@ -12,6 +12,6 @@ export default {
   // Without this, React Router 7 rejects the POST with "Bad Request" (CSRF check).
   allowedActionOrigins: [
     "admin.shopify.com",
-    "shopify.ktcloud365.com",
+    "cartquest.ktcloud365.com",
   ],
 } satisfies Config;

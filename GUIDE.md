@@ -16,7 +16,7 @@ Official Shopify docs (bookmark these):
 
 | Done (you already tested this) | Still needed before submit |
 |--------------------------------|----------------------------|
-| Production app at `https://shopify.ktcloud365.com` | Switch billing to **production** (`isTest: false`) |
+| Production app at `https://cartquest.ktcloud365.com` | Switch billing to **production** (`isTest: false`) |
 | Install + OAuth + billing approval (test charges) | Privacy policy on a **public URL** |
 | Save & activate settings | App Store listing (icon, screenshots, video, copy) |
 | Checkout tier discounts work | Reviewer testing instructions |
@@ -118,7 +118,7 @@ shopify app deploy --force
 
 Reviewers (or curious merchants) may open:
 
-`https://shopify.ktcloud365.com/`
+`https://cartquest.ktcloud365.com/`
 
 The homepage now shows **CartQuest** branding instead of Shopify template placeholders.
 
@@ -137,7 +137,7 @@ Deploy the updated code to the server (`npm run build` + PM2 restart), then open
 1. Open [Dev Dashboard](https://dev.shopify.com/dashboard) → **CartQuest** → **Versions**.
 2. Open the **active / released** version.
 3. Check:
-   - App URL is `https://shopify.ktcloud365.com`
+   - App URL is `https://cartquest.ktcloud365.com`
    - Redirect URLs use that same domain
    - Compliance webhooks are present (`customers/data_request`, `customers/redact`, `shop/redact`)
    - Extensions `tier-cart-discount` and `tier-cart-ui` are included
@@ -152,7 +152,7 @@ If anything looks wrong, run `shopify app deploy --force` again from your local 
 - [ ] Latest code on server (`npm run build` + PM2 restart)
 - [ ] `shopify app deploy` completed from local machine
 - [ ] Fresh install + billing approval works after the change
-- [ ] Homepage at `https://shopify.ktcloud365.com/` shows CartQuest branding (no `[your app]` placeholders)
+- [ ] Homepage at `https://cartquest.ktcloud365.com/` shows CartQuest branding (no `[your app]` placeholders)
 - [ ] Dev Dashboard active version URLs/webhooks look correct
 - [ ] Save & activate + checkout discount still work after reinstall
 
@@ -172,7 +172,7 @@ Shopify requires every App Store app to link to a privacy policy merchants can o
 
 CartQuest now serves a public privacy page at:
 
-**https://shopify.ktcloud365.com/privacy.html**
+**https://cartquest.ktcloud365.com/privacy.html**
 
 No Shopify login is required. The homepage also links to it.
 
@@ -314,7 +314,7 @@ Do **not** use emails containing the word “Shopify”.
 
 ## B5. Phase B checklist
 
-- [ ] Privacy URL loads in incognito: `https://shopify.ktcloud365.com/privacy.html`
+- [ ] Privacy URL loads in incognito: `https://cartquest.ktcloud365.com/privacy.html`
 - [ ] Support / privacy emails on that page are real inboxes you monitor
 - [ ] 3–5 clean screenshots ready
 - [ ] Demo video recorded + uploaded (or ready to upload)
@@ -342,7 +342,7 @@ Fill or confirm:
 
 | Field | What to enter |
 |-------|----------------|
-| App URL | `https://shopify.ktcloud365.com` (usually via released version) |
+| App URL | `https://cartquest.ktcloud365.com` (usually via released version) |
 | App icon | 1200×1200 PNG or JPEG |
 | Compliance webhooks | Must be registered (already in your TOML / version) |
 | API / contact emails | Your company emails (no “Shopify” in the address) |
@@ -404,7 +404,7 @@ UNINSTALL
 20. Uninstall the app. Compliance webhooks (including shop/redact) are handled.
 
 Support: support@YOUR-DOMAIN.com
-Privacy policy: https://YOUR-PRIVACY-URL
+Privacy policy: https://cartquest.ktcloud365.com/privacy.html
 ```
 
 ## C4. Protected customer data
@@ -457,7 +457,7 @@ Do this **after** `isTest: false` is live. Prefer a clean uninstall/reinstall.
 
 ## D4. Infra sanity
 
-- [ ] `SHOPIFY_APP_URL=https://shopify.ktcloud365.com` on server `.env`
+- [ ] `SHOPIFY_APP_URL=https://cartquest.ktcloud365.com` on server `.env`
 - [ ] Homepage branding looks correct
 - [ ] Privacy URL opens in incognito
 - [ ] Active app version in Dev Dashboard looks correct
@@ -536,7 +536,7 @@ These are not always hard blockers, but they reduce “looks unfinished” feedb
 | Item | Value |
 |------|--------|
 | App name | CartQuest |
-| Production URL | `https://shopify.ktcloud365.com` |
+| Production URL | `https://cartquest.ktcloud365.com` |
 | Billing | Premium Plan — $20 USD / month — 14-day trial |
 | Checkout discount title | CartQuest Rewards |
 | Admin | Rewards settings |
@@ -550,7 +550,7 @@ These are not always hard blockers, but they reduce “looks unfinished” feedb
 
 # Your immediate next actions (start here)
 
-1. **Phase B1:** confirm `https://shopify.ktcloud365.com/privacy.html` loads in incognito (file already in `build/client` after build)  
+1. **Phase B1:** confirm `https://cartquest.ktcloud365.com/privacy.html` loads in incognito (file already in `build/client` after build)  
 2. **Phase B2–B3:** capture screenshots + record 2–3 min demo video  
 3. **Phase B4:** finalize listing copy + real support emails  
 4. **Phase C:** complete Partner Dashboard listing  
@@ -572,7 +572,7 @@ You already finished the hard product work. Keep this only if you need to re-che
 ### Server env (must stay correct)
 
 ```env
-SHOPIFY_APP_URL=https://shopify.ktcloud365.com
+SHOPIFY_APP_URL=https://cartquest.ktcloud365.com
 SHOPIFY_API_KEY=...
 SHOPIFY_API_SECRET=...
 SCOPES=write_metaobjects,write_metaobject_definitions,write_discounts
