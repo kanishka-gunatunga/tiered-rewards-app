@@ -1,0 +1,90 @@
+{%- comment -%}
+  Shared storefront money formatter — uses the shop's money format so JS
+  matches Liquid | money (avoids browser "A$" for AUD vs theme "$").
+{%- endcomment -%}
+<style>
+  /* Theme cart summary: keep discount amount on one line (e.g. cart-summary-item themes). */
+  li.cart-summary-item.discount-price {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+  }
+
+  li.cart-summary-item.discount-price > span.heading-font {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  li.cart-summary-item.discount-price > span:last-child {
+    flex: 0 0 auto;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+</style>
+<script>
+  if (!window.__tierRewardsFormatMoney) {
+    window.__tierRewardsFormatMoney = (() => {
+      const moneyFormat = {{ shop.money_format | json }};
+
+      const formatWithDelimiters = (cents, precision, thousands, decimal) => {
+        const safePrecision = Number.isFinite(precision) ? precision : 2;
+        const safeThousands = thousands ?? ",";
+        const safeDecimal = decimal ?? ".";
+        const centsNumber = Number(cents || 0);
+        if (!Number.isFinite(centsNumber)) return "0";
+
+        const number = (centsNumber / 100).toFixed(safePrecision);
+        const parts = number.split(".");
+        const dollars = parts[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, `$1${safeThousands}`);
+        const centsPart = parts[1] ? safeDecimal + parts[1] : "";
+        return dollars + centsPart;
+      };
+
+      return (cents, maxFractionDigits = 2) => {
+        const centsNumber = Number(cents || 0);
+        if (
+          typeof Shopify !== "undefined" &&
+          typeof Shopify.formatMoney === "function" &&
+          maxFractionDigits === 2
+        ) {
+          return Shopify.formatMoney(centsNumber, moneyFormat);
+        }
+
+        return moneyFormat
+          .replace(
+            /\{\{\s*amount_no_decimals_with_comma_separator\s*\}\}/g,
+            formatWithDelimiters(centsNumber, 0, ".", ","),
+          )
+          .replace(
+            /\{\{\s*amount_with_comma_separator\s*\}\}/g,
+            formatWithDelimiters(centsNumber, maxFractionDigits, ".", ","),
+          )
+          .replace(/\{\{\s*amount_no_decimals\s*\}\}/g, formatWithDelimiters(centsNumber, 0))
+          .replace(/\{\{\s*amount\s*\}\}/g, formatWithDelimiters(centsNumber, maxFractionDigits));
+      };
+    })();
+  }
+
+  if (!window.__tierRewardsReadSubtotal) {
+    window.__tierRewardsReadSubtotal = (data) => {
+      if (!data || typeof data !== "object") return null;
+      if (Array.isArray(data.items) && data.items.length > 0) {
+        const fromOriginal = data.items.reduce((sum, item) => {
+          const lineTotal = Number(item.original_line_price ?? item.line_price ?? 0);
+          return sum + (Number.isFinite(lineTotal) ? lineTotal : 0);
+        }, 0);
+        if (fromOriginal > 0) return fromOriginal;
+      }
+      const itemsSubtotal = Number(data.items_subtotal_price ?? data.total_price);
+      const totalDiscount = Number(data.total_discount || 0);
+      if (Number.isFinite(itemsSubtotal) && Number.isFinite(totalDiscount) && totalDiscount > 0) {
+        return itemsSubtotal + totalDiscount;
+      }
+      return Number.isFinite(itemsSubtotal) ? itemsSubtotal : null;
+    };
+  }
+</script>

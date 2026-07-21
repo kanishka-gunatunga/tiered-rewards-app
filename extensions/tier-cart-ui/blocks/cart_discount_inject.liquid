@@ -18,27 +18,21 @@
 -%}
 
 {% if rewards_enabled %}
+  {% render 'tier-money-formatter' %}
   <script>
     (() => {
       if (window.__tierCartDiscountInjectHooked) return;
       window.__tierCartDiscountInjectHooked = true;
 
       const LABEL = {{ block.settings.label | default: 'CartQuest tier reward' | json }};
-      const CURRENCY = {{ cart.currency.iso_code | json }};
       const ROW_ATTR = "data-tier-cart-discount-inject";
 
-      const formatMoney = (cents) => {
-        const amount = Number(cents || 0) / 100;
-        try {
-          return new Intl.NumberFormat(undefined, {
-            style: "currency",
-            currency: CURRENCY,
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          }).format(amount);
-        } catch {
-          return `$${amount.toFixed(2)}`;
+      const formatMoney = (cents, maxFractionDigits = 2) => {
+        if (typeof window.__tierRewardsFormatMoney === "function") {
+          return window.__tierRewardsFormatMoney(cents, maxFractionDigits);
         }
+        const amount = Number(cents || 0) / 100;
+        return `$${amount.toFixed(maxFractionDigits)}`;
       };
 
       const TOTAL_SELECTORS = [

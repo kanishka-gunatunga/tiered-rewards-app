@@ -124,6 +124,8 @@
     </div>
   </div>
 
+  {% render 'tier-money-formatter' %}
+
   <script>
     (() => {
       const CONFETTI_EMOJIS = ["🎉", "✨", "🎊", "⭐", "🥳", "💫"];
@@ -175,12 +177,7 @@
           window.__tierRewardsDismissCelebration();
           injectCelebrationStyles();
 
-          const discount = (Number(tier.discountAmount || 0) / 100).toLocaleString(undefined, {
-            style: "currency",
-            currency: currencyCode || "USD",
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          });
+          const discount = window.__tierRewardsFormatMoney(tier.discountAmount, 0);
 
           const layer = document.createElement("div");
           layer.id = "tier-rewards-global-confetti";
@@ -252,22 +249,7 @@
 
       window.__tierRewardsFrozenEarned = {};
 
-      const readSubtotal = (data) => {
-        if (!data || typeof data !== "object") return null;
-        if (Array.isArray(data.items) && data.items.length > 0) {
-          const fromOriginal = data.items.reduce((sum, item) => {
-            const lineTotal = Number(item.original_line_price ?? item.line_price ?? 0);
-            return sum + (Number.isFinite(lineTotal) ? lineTotal : 0);
-          }, 0);
-          if (fromOriginal > 0) return fromOriginal;
-        }
-        const itemsSubtotal = Number(data.items_subtotal_price ?? data.total_price);
-        const totalDiscount = Number(data.total_discount || 0);
-        if (Number.isFinite(itemsSubtotal) && Number.isFinite(totalDiscount) && totalDiscount > 0) {
-          return itemsSubtotal + totalDiscount;
-        }
-        return Number.isFinite(itemsSubtotal) ? itemsSubtotal : null;
-      };
+      const readSubtotal = window.__tierRewardsReadSubtotal;
 
       if (!window.__tierRewardsNetworkHooked) {
         window.__tierRewardsNetworkHooked = true;
@@ -446,7 +428,6 @@
       applyThemeColors(scope);
 
       const rawTiers = {{ tiers_json | json }};
-      const currencyCode = {{ cart.currency.iso_code | json }};
       const defaultSubtotal = Number(scope.dataset.tierDefaultSubtotal || 0);
 
       const parseTiers = (value) => {
@@ -475,12 +456,7 @@
       if (!tiers.length) return;
 
       const formatMoney = (cents, maxFractionDigits = 2) =>
-        (Number(cents || 0) / 100).toLocaleString(undefined, {
-          style: "currency",
-          currency: currencyCode,
-          minimumFractionDigits: 0,
-          maximumFractionDigits: maxFractionDigits,
-        });
+        window.__tierRewardsFormatMoney(cents, maxFractionDigits);
 
       const els = {
         cartText: scope.querySelector("[data-tier-cart-text]"),
@@ -546,7 +522,7 @@
         }
 
         if (earned > previousEarned && state.currentTier && !window.__tierRewardsCelebrateBusy) {
-          window.__tierRewardsCelebrate(state.currentTier, currencyCode);
+          window.__tierRewardsCelebrate(state.currentTier);
         }
 
         live.dataset.trEarnedCents = String(earned);

@@ -30,9 +30,32 @@ const LIST_APP_DISCOUNTS_QUERY = `#graphql
   }
 `;
 
+/** Allow tier rewards to stack with member/product pricing and other discounts. */
+const DISCOUNT_COMBINES_WITH = {
+  orderDiscounts: true,
+  productDiscounts: true,
+  shippingDiscounts: true,
+};
+
 const CREATE_DISCOUNT_MUTATION = `#graphql
   mutation CreateTierCartDiscount($discount: DiscountAutomaticAppInput!) {
     discountAutomaticAppCreate(automaticAppDiscount: $discount) {
+      automaticAppDiscount {
+        discountId
+        title
+        status
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+const UPDATE_DISCOUNT_MUTATION = `#graphql
+  mutation UpdateTierCartDiscount($id: ID!, $discount: DiscountAutomaticAppInput!) {
+    discountAutomaticAppUpdate(id: $id, automaticAppDiscount: $discount) {
       automaticAppDiscount {
         discountId
         title
@@ -89,16 +112,21 @@ function metafieldInput(config: TierRewardsConfig) {
   };
 }
 
+type CartQuestDiscountRef = {
+  nodeId: string;
+  discountId: string;
+};
+
 export async function hasTierCartDiscount(
   admin: AdminGraphQLClient,
 ): Promise<boolean> {
-  const discountId = await findAutomaticDiscountId(admin);
-  return Boolean(discountId);
+  const discount = await findCartQuestDiscount(admin);
+  return Boolean(discount);
 }
 
-async function findAutomaticDiscountId(
+async function findCartQuestDiscount(
   admin: AdminGraphQLClient,
-): Promise<string | null> {
+): Promise<CartQuestDiscountRef | null> {
   const response = await admin.graphql(LIST_APP_DISCOUNTS_QUERY);
   const payload = (await response.json()) as GraphqlPayload;
   assertGraphqlOk(payload, "List discounts");
@@ -111,8 +139,13 @@ async function findAutomaticDiscountId(
     const discount = node.discount as
       | { discountId?: string; title?: string }
       | undefined;
-    if (discount?.title === TIER_DISCOUNT_TITLE && discount.discountId) {
-      return discount.discountId;
+    const nodeId = typeof node.id === "string" ? node.id : null;
+    if (
+      nodeId &&
+      discount?.title === TIER_DISCOUNT_TITLE &&
+      discount.discountId
+    ) {
+      return { nodeId, discountId: discount.discountId };
     }
   }
 
@@ -130,6 +163,7 @@ async function createAutomaticDiscount(
         title: TIER_DISCOUNT_TITLE,
         functionHandle: TIER_DISCOUNT_FUNCTION_HANDLE,
         discountClasses: ["ORDER"],
+        combinesWith: DISCOUNT_COMBINES_WITH,
         startsAt,
         metafields: [metafieldInput(config)],
       },
@@ -160,6 +194,33 @@ async function createAutomaticDiscount(
   }
 
   return discountId;
+}
+
+async function updateAutomaticDiscount(
+  admin: AdminGraphQLClient,
+  nodeId: string,
+): Promise<void> {
+  const response = await admin.graphql(UPDATE_DISCOUNT_MUTATION, {
+    variables: {
+      id: nodeId,
+      discount: {
+        combinesWith: DISCOUNT_COMBINES_WITH,
+      },
+    },
+  });
+  const payload = (await response.json()) as GraphqlPayload;
+  assertGraphqlOk(payload, "Update discount");
+
+  const userErrors =
+    (
+      payload.data?.discountAutomaticAppUpdate as {
+        userErrors?: Array<{ message: string }>;
+      }
+    )?.userErrors ?? [];
+
+  if (userErrors.length > 0) {
+    throw new Error(userErrors.map((e) => e.message).join("; "));
+  }
 }
 
 async function setDiscountMetafield(
@@ -199,13 +260,15 @@ export async function syncTierRewardsDiscount(
   admin: AdminGraphQLClient,
   config: TierRewardsConfig,
 ): Promise<{ discountId: string }> {
-  let discountId = await findAutomaticDiscountId(admin);
+  const existing = await findCartQuestDiscount(admin);
 
-  if (!discountId) {
-    discountId = await createAutomaticDiscount(admin, config);
-  } else {
-    await setDiscountMetafield(admin, discountId, config);
+  if (!existing) {
+    const discountId = await createAutomaticDiscount(admin, config);
+    return { discountId };
   }
 
-  return { discountId };
+  await setDiscountMetafield(admin, existing.discountId, config);
+  await updateAutomaticDiscount(admin, existing.nodeId);
+
+  return { discountId: existing.discountId };
 }

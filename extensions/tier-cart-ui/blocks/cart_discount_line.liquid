@@ -18,6 +18,7 @@
 -%}
 
 {% if rewards_enabled and cart.total_discount > 0 %}
+  {% render 'tier-money-formatter' %}
   <div class="tr-cart-discount-summary" data-tier-cart-discount-summary {{ block.shopify_attributes }}>
     {% if cart.cart_level_discount_applications.size > 0 %}
       {% for discount_application in cart.cart_level_discount_applications %}
@@ -69,18 +70,12 @@
       if (window.__tierCartDiscountSummaryHooked) return;
       window.__tierCartDiscountSummaryHooked = true;
 
-      const formatMoney = (cents, currency = {{ cart.currency.iso_code | json }}) => {
-        const amount = Number(cents || 0) / 100;
-        try {
-          return new Intl.NumberFormat(undefined, {
-            style: "currency",
-            currency,
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          }).format(amount);
-        } catch {
-          return `$${amount.toFixed(2)}`;
+      const formatMoney = (cents, maxFractionDigits = 2) => {
+        if (typeof window.__tierRewardsFormatMoney === "function") {
+          return window.__tierRewardsFormatMoney(cents, maxFractionDigits);
         }
+        const amount = Number(cents || 0) / 100;
+        return `$${amount.toFixed(maxFractionDigits)}`;
       };
 
       const fallbackLabel = {{ block.settings.label | default: 'CartQuest tier reward' | json }};
@@ -103,7 +98,7 @@
               (discount) => `
                 <div class="tr-cart-discount-row">
                   <span class="tr-cart-discount-label">${discount.title || fallbackLabel}</span>
-                  <span class="tr-cart-discount-amount">-${formatMoney(discount.total_allocated_amount, cartData.currency)}</span>
+                  <span class="tr-cart-discount-amount">-${formatMoney(discount.total_allocated_amount)}</span>
                 </div>
               `,
             )
@@ -114,7 +109,7 @@
         root.innerHTML = `
           <div class="tr-cart-discount-row">
             <span class="tr-cart-discount-label">${fallbackLabel}</span>
-            <span class="tr-cart-discount-amount">-${formatMoney(totalDiscount, cartData.currency)}</span>
+            <span class="tr-cart-discount-amount">-${formatMoney(totalDiscount)}</span>
           </div>
         `;
       };

@@ -148,7 +148,7 @@ export function cartLinesDiscountsGenerateRun(
         orderDiscountsAdd: {
           candidates: [
             {
-              message: `$${discountDollars} tier reward unlocked`,
+              message: `Tier reward unlocked`,
               targets: [
                 {
                   orderSubtotal: {

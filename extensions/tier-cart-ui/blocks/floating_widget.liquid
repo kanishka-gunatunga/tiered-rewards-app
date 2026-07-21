@@ -5,7 +5,16 @@
   endfor
   assign rewards_enabled = false
   assign tiers_json = blank
-  assign cart_subtotal_cents = cart.items_subtotal_price | default: cart.total_price
+  assign cart_subtotal_cents = 0
+  for item in cart.items
+    assign cart_subtotal_cents = cart_subtotal_cents | plus: item.original_line_price
+  endfor
+  if cart_subtotal_cents == 0
+    assign cart_subtotal_cents = cart.items_subtotal_price | plus: cart.total_discount
+  endif
+  if cart_subtotal_cents == 0
+    assign cart_subtotal_cents = cart.total_price
+  endif
 
   if rewards_entry
     if rewards_entry.enabled.value == true or rewards_entry.enabled.value == 'true'
@@ -341,6 +350,8 @@
     }
   </style>
 
+  {% render 'tier-money-formatter' %}
+
   <script>
     (function() {
       function initTierFloatingWidget() {
@@ -424,12 +435,10 @@
           return;
         }
 
-        const formatMoney = (cents, fractionDigits = 0) => {
-          return "$" + (cents / 100).toLocaleString(undefined, {
-            minimumFractionDigits: fractionDigits,
-            maximumFractionDigits: fractionDigits
-          });
-        };
+        const formatMoney = (cents, fractionDigits = 0) =>
+          window.__tierRewardsFormatMoney
+            ? window.__tierRewardsFormatMoney(cents, fractionDigits)
+            : `$${(Number(cents || 0) / 100).toFixed(fractionDigits)}`;
 
         const computeState = (subtotalCents) => {
           let currentIndex = -1;
@@ -527,12 +536,15 @@
         const fetchSubtotal = async () => {
           try {
             const response = await fetch("/cart.js", {
-              headers: { "Cache-Control": "no-cache", "Pragma": "no-cache" }
+              credentials: "same-origin",
+              cache: "no-store",
+              headers: { Accept: "application/json" },
             });
+            if (!response.ok) return lastKnownSubtotal;
             const cartData = await response.json();
-            const subtotal = Number(cartData?.items_subtotal_price ?? cartData?.total_price ?? lastKnownSubtotal);
+            const subtotal = window.__tierRewardsReadSubtotal?.(cartData);
             return Number.isFinite(subtotal) ? subtotal : lastKnownSubtotal;
-          } catch (e) {
+          } catch {
             return lastKnownSubtotal;
           }
         };

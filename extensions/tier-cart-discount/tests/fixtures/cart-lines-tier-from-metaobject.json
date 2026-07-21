@@ -64,7 +64,7 @@
           "orderDiscountsAdd": {
             "candidates": [
               {
-                "message": "$400.00 tier reward unlocked",
+                "message": "Tier reward unlocked",
                 "targets": [
                   {
                     "orderSubtotal": {
