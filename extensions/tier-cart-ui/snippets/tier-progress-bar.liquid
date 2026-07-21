@@ -546,12 +546,9 @@
         } else if (currentIndex >= maxIndex) {
           leftIndex = maxIndex;
           rightIndex = maxIndex;
-        } else if (currentIndex === maxIndex - 1) {
-          leftIndex = currentIndex;
-          rightIndex = maxIndex;
         } else {
-          leftIndex = currentIndex + 1;
-          rightIndex = Math.min(currentIndex + 2, maxIndex);
+          leftIndex = currentIndex;
+          rightIndex = currentIndex + 1;
         }
 
         const leftTier = tierAt(leftIndex);
